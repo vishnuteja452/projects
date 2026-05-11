@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POSTRA | Participation Oriented Structured Threaded Response Application</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['IBM Plex Sans', 'sans-serif'] },
+                    colors: {
+                        'postra-bg': '#030303',
+                        'postra-surface': '#1a1a1b',
+                        'postra-orange': '#ff4500',
+                        'postra-blue': '#24a0ed',
+                        'postra-border': '#343536',
+                        'postra-text': '#d7dadc',
+                        'postra-muted': '#818384',
+                        'postra-hover': '#272729',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #343536; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #818384; }
+        body { background-color: #030303; color: #d7dadc; }
+        .hidden { display: none !important; }
+        .glass { background: #1a1a1b; border: 1px solid #343536; }
+    </style>
+</head>
+<body class="font-sans antialiased text-postra-text bg-postra-bg">
+    <!-- Header -->
+    <header class="fixed top-0 w-full h-12 bg-postra-surface border-b border-postra-border z-50 px-5 flex items-center justify-between">
+        <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" id="logo-home">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-postra-orange font-black text-xl">
+                <i class="fa-solid fa-p"></i>
+            </div>
+            <span class="font-bold text-xl tracking-wide text-white">POSTRA</span>
+        </div>
+        
+        <div class="flex-1 max-w-2xl mx-10">
+            <div class="relative bg-postra-hover h-9 rounded-full px-4 flex items-center gap-2 border border-transparent hover:border-postra-border focus-within:bg-[#030303] focus-within:border-white transition-all overflow-hidden">
+                <i class="fa-solid fa-magnifying-glass text-postra-text text-sm px-1"></i>
+                <input type="text" id="global-search" placeholder="Search Postra" class="bg-transparent border-none outline-none text-white text-sm w-full font-medium placeholder-postra-muted">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4" id="auth-controls">
+            <button class="px-4 py-1.5 border border-postra-border rounded-full text-xs font-bold hover:bg-postra-hover transition-all text-white" id="open-login">Log In</button>
+            <button class="px-4 py-1.5 bg-white text-black rounded-full text-xs font-bold hover:opacity-90 transition-all" id="open-register">Sign Up</button>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="grid grid-cols-[260px_1fr_312px] max-w-[1440px] mx-auto mt-12 min-h-[calc(100vh-48px)]">
+        <!-- Sidebar Navigation -->
+        <ol class="sticky top-12 bg-postra-bg h-[calc(100vh-48px)] border-r border-postra-border p-5 overflow-y-auto list-none">
+            <div class="mb-6">
+                <p class="text-[11px] font-semibold text-postra-muted uppercase tracking-wider mb-2">Participation Feeds</p>
+                <ul class="space-y-1">
+                    <li class="nav-item bg-postra-hover rounded-md" id="feed-home"><a href="#" class="flex items-center gap-3 p-2 text-sm font-medium text-white"><i class="fa-solid fa-fire-flame-curved text-postra-orange"></i> Home</a></li>
+                    <li class="nav-item hover:bg-postra-hover rounded-md transition-colors" id="feed-popular"><a href="#" class="flex items-center gap-3 p-2 text-sm font-medium"><i class="fa-solid fa-arrow-trend-up"></i> Popular</a></li>
+                    <li class="nav-item hover:bg-postra-hover rounded-md transition-colors" id="feed-all"><a href="#" class="flex items-center gap-3 p-2 text-sm font-medium"><i class="fa-solid fa-globe"></i> All</a></li>
+                    <li class="nav-item hover:bg-postra-hover rounded-md transition-colors" id="feed-my-posts"><a href="#" class="flex items-center gap-3 p-2 text-sm font-medium"><i class="fa-solid fa-user-pen"></i> My Posts</a></li>
+                </ul>
+            </div>
+            
+            <div id="joined-boards-section" class="mb-6 hidden">
+                <p class="text-[11px] font-semibold text-postra-muted uppercase tracking-wider mb-2">Member of Boards</p>
+                <ul class="space-y-1" id="sidebar-joined-boards">
+                    <!-- Dynamic rendering -->
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-[11px] font-semibold text-postra-muted uppercase tracking-wider mb-2">Structured Boards (p/)</p>
+                <ul class="space-y-1" id="sidebar-boards">
+                    <!-- Dynamic rendering -->
+                </ul>
+            </div>
+        </ol>
+
+        <!-- Discourse Feed -->
+        <main class="py-6 px-10 overflow-y-auto" id="main-content">
+            <div id="feed-container" class="max-w-[740px] mx-auto space-y-4">
+                <!-- Create Post Input -->
+                <div class="bg-postra-surface border border-postra-border rounded-md p-2 flex items-center gap-2 mb-4 hover:border-postra-muted transition-colors cursor-text" onclick="PostraApp.showCreatePostModal()">
+                    <div class="w-8 h-8 rounded-full bg-postra-hover flex items-center justify-center text-postra-muted ml-2">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="flex-1 bg-postra-hover border border-postra-border hover:border-postra-muted rounded-md py-2 px-4 mx-2 text-sm text-postra-muted transition-colors text-left flex items-center h-10">
+                        Create Post
+                    </div>
+                    <button class="w-10 h-10 flex items-center justify-center text-postra-muted hover:bg-postra-hover rounded-md transition-all mr-1" onclick="PostraApp.showCreatePostModal()">
+                        <i class="fa-regular fa-image text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="thread-list" class="space-y-3">
+                    <div class="text-center py-20 text-postra-muted" id="loader">
+                        <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-4"></i>
+                        <p class="font-bold tracking-widest text-sm">LOADING...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Intelligence Widgets -->
+        <aside class="p-6 overflow-y-auto h-[calc(100vh-48px)] sticky top-12">
+            <div class="bg-postra-surface border border-postra-border rounded-md p-3 mb-4">
+                <div class="h-1 bg-postra-orange w-full rounded mb-3"></div>
+                <h3 class="text-xs font-bold uppercase tracking-wider mb-2 text-postra-text">Platform Protocol</h3>
+                <p class="text-[12px] text-postra-muted mb-4 leading-relaxed">Evaluation-based content ranking active. Registered contribution required for p/politics.</p>
+                <div class="space-y-2">
+                    <button class="w-full py-1.5 bg-postra-orange text-white rounded-full font-bold text-sm hover:bg-opacity-90 transition-all font-sans" id="open-create-post">ADD CONTENT</button>
+                    <button class="w-full py-1.5 border border-postra-border text-postra-orange rounded-full font-bold text-sm hover:bg-postra-hover transition-all font-sans" id="open-create-comm">BUILD COMMUNITY</button>
+                </div>
+            </div>
+
+            <!-- Trending Discourse Widget -->
+            <div class="bg-postra-surface border border-postra-border rounded-md p-3 mb-4">
+                <h3 class="text-xs font-bold text-postra-muted tracking-wider uppercase mb-3">Trending Discourse</h3>
+                <div id="trending-widget-list" class="space-y-3">
+                    <!-- Top trending -->
+                </div>
+            </div>
+
+            <div class="bg-postra-surface border border-postra-border rounded-md p-3">
+                <h3 class="text-xs font-bold text-postra-muted tracking-wider uppercase mb-3">Platform Stats</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <p class="text-base font-bold text-postra-text" id="status-users">61.2k</p>
+                        </div>
+                        <p class="text-[10px] text-postra-muted font-semibold tracking-wider">LIVE ANALYSTS</p>
+                    </div>
+                    <div>
+                        <p class="text-base font-bold text-postra-text" id="status-threads">456</p>
+                        <p class="text-[10px] text-postra-muted font-semibold tracking-wider">ACTIVE THREADS</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Voice Intelligence FAB -->
+    <div class="fixed bottom-6 right-6 z-[100]">
+        <div class="voice-trigger w-14 h-14 bg-postra-orange rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-[#ff5500] transition-colors shadow-lg" id="voice-trigger">
+            <i class="fa-solid fa-microphone-lines text-xl"></i>
+        </div>
+    </div>
+
+    <!-- Voice Panel -->
+    <div id="voice-panel" class="hidden fixed bottom-24 right-6 w-[340px] glass rounded-xl p-5 z-[110] flex flex-col shadow-2xl">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b border-postra-border">
+            <div class="flex items-center gap-2 text-white font-bold text-sm">
+                 Ask Postra
+            </div>
+            <i class="fa-solid fa-xmark text-postra-muted cursor-pointer hover:text-white transition-all text-lg" id="close-voice"></i>
+        </div>
+        
+        <div id="voice-output" class="flex-1 max-h-60 overflow-y-auto mb-4 text-sm text-postra-text space-y-3">
+            <p class="text-postra-muted italic">Ready to assist.</p>
+        </div>
+
+        <div class="relative mt-2">
+            <input type="text" id="assistant-input" placeholder="Message AI..." class="w-full bg-postra-hover border border-postra-border rounded-full py-2.5 px-4 text-sm text-white focus:outline-none focus:border-postra-muted transition-all">
+            <button id="send-to-ai" class="absolute right-1 top-1 w-8 h-8 flex items-center justify-center text-postra-muted hover:text-white transition-all"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+        <button id="stop-task" class="w-full mt-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-full font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 hidden">
+            <i class="fa-solid fa-stop"></i> Stop Current Task
+        </button>
+    </div>
+
+    <div id="modal-container"></div>
+    <script src="app.js"></script>
+</body>
+</html>
