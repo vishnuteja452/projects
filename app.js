@@ -129,12 +129,15 @@ function showAuthView(viewName) {
     document.getElementById("auth-login-view").classList.add("hidden");
     document.getElementById("auth-setup-view").classList.add("hidden");
     document.getElementById("auth-admin-setup-view").classList.add("hidden");
+    document.getElementById("auth-signup-view").classList.add("hidden");
     
     // Clear errors
     const loginError = document.getElementById("login-error");
     const setupError = document.getElementById("setup-error");
+    const signupError = document.getElementById("signup-error");
     if (loginError) loginError.classList.add("hidden");
     if (setupError) setupError.classList.add("hidden");
+    if (signupError) signupError.classList.add("hidden");
 
     if (viewName === "login") {
         document.getElementById("auth-login-view").classList.remove("hidden");
@@ -142,6 +145,8 @@ function showAuthView(viewName) {
         document.getElementById("auth-setup-view").classList.remove("hidden");
     } else if (viewName === "admin-setup") {
         document.getElementById("auth-admin-setup-view").classList.remove("hidden");
+    } else if (viewName === "signup") {
+        document.getElementById("auth-signup-view").classList.remove("hidden");
     }
 }
 
@@ -239,6 +244,69 @@ function handleAdminSetup(e) {
     alert("System Admin account registered! You can now sign in.");
     
     document.getElementById("admin-setup-form").reset();
+    showAuthView("login");
+}
+
+function handleAuthSignup(e) {
+    e.preventDefault();
+    const name = document.getElementById("signup-name").value.trim();
+    const email = document.getElementById("signup-email").value.trim().toLowerCase();
+    const role = document.getElementById("signup-role").value;
+    const phone = document.getElementById("signup-phone").value.trim();
+    const password = document.getElementById("signup-password").value;
+    const confirm = document.getElementById("signup-confirm").value;
+    const errorDiv = document.getElementById("signup-error");
+
+    if (!name || !email || !password) {
+        errorDiv.textContent = "Name, email, and password are required.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    if (password.length < 6) {
+        errorDiv.textContent = "Password must be at least 6 characters long.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    if (password !== confirm) {
+        errorDiv.textContent = "Passwords do not match.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    // Check if email already exists
+    const existing = state.employees.find(emp => emp.email.toLowerCase() === email);
+    if (existing) {
+        errorDiv.textContent = "An account with this email already exists.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    // Generate unique employee ID
+    const maxId = state.employees.reduce((max, emp) => {
+        const num = parseInt(emp.id.replace("EMP-", ""));
+        return num > max ? num : max;
+    }, 100);
+    const newId = `EMP-${maxId + 1}`;
+
+    const newUser = {
+        id: newId,
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+        phone: phone || "",
+        status: "Active",
+        roleDetail: role.charAt(0).toUpperCase() + role.slice(1)
+    };
+
+    state.employees.push(newUser);
+    saveStateToStorage("ge_employees", state.employees);
+    addNotification(`New ${role} account created: ${name}.`);
+    alert("Account created successfully! Please sign in.");
+
+    document.getElementById("signup-form").reset();
     showAuthView("login");
 }
 
