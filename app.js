@@ -1,810 +1,1731 @@
-const PostraApp = {
-    state: {
-        currentUser: null,
-        token: localStorage.getItem('token') || null,
-        threads: [],
-        currentBoard: 'home',
-        boards: ['technology', 'programming', 'ai', 'startups', 'careers', 'gaming', 'education', 'productivity', 'open-source', 'general', 'politics', 'healthcare', 'linux'],
-    },
+/* ==========================================================================
+   General Electric Elevators - LiftCare Pro Application Script
+   State Management, LocalStorage Database Mocking, & Portal Routing
+   ========================================================================== */
 
-    async init() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('token');
-        if (urlToken) {
-            localStorage.setItem('token', urlToken);
-            window.history.replaceState({}, document.title, "/");
-            this.state.token = urlToken;
-        }
+// 1. Initial State Data Definition (Database Mock)
+const INITIAL_ELEVATORS = [];
+const INITIAL_EMPLOYEES = []; // Completely empty on first load. Admin created on first boot.
+const INITIAL_TICKETS = [];
+const INITIAL_ATTENDANCE = [];
+const INITIAL_NOTIFICATIONS = [];
 
-        if (this.state.token) await this.fetchProfile();
-        this.renderSidebar();
-        this.addEventListeners();
-        await this.fetchThreads('home');
-        this.renderTrendingWidget();
-        this.updateStats();
-        this.initAssistantProtocol();
-    },
-
-    async fetchProfile() {
-        try {
-            const res = await fetch('/api/profile', { headers: { 'x-auth-token': this.state.token } });
-            if (res.ok) { this.state.currentUser = await res.json(); this.updateAuthUI(); } else this.logout();
-        } catch (e) {}
-    },
-
-    async fetchThreads(category = 'home') {
-        let url = '/api/threads?sortBy=trending';
-        if (category === 'popular') url = '/api/threads?sortBy=participation';
-        else if (category === 'all') url = '/api/threads'; 
-        else if (category === 'my-posts') url = '/api/threads/me';
-        else if (category && category !== 'home') url = `/api/threads?category=${category}&sortBy=trending`;
-
-        try {
-            const headers = {};
-            if(this.state.token) headers['x-auth-token'] = this.state.token;
-             
-            const res = await fetch(url, { headers });
-            if (res.status === 403 || res.status === 401) { 
-                this.state.pendingBoard = category;
-                this.showLoginModal(); 
-                return; 
-            }
-            const data = await res.json();
-            this.state.threads = Array.isArray(data) ? data : [];
-            this.renderThreads();
-        } catch (e) {
-            this.state.threads = [];
-            this.renderThreads();
-        }
-    },
-
-    renderThreads() {
-        const container = document.getElementById('thread-list');
-        if (!container) return;
-        
-        let displayThreads = this.state.threads;
-        try {
-            const hidden = JSON.parse(localStorage.getItem('hiddenThreads') || '[]');
-            displayThreads = displayThreads.filter(t => !hidden.includes(t._id));
-        } catch(e) {}
-        
-        if (displayThreads.length === 0) {
-            container.innerHTML = `<div class="text-center py-20 text-postra-muted font-bold tracking-widest text-[13px]">No discourse found.</div>`;
-            return;
-        }
-        
-        let saved = [];
-        try { saved = JSON.parse(localStorage.getItem('savedThreads') || '[]'); } catch(e) {}
-
-        container.innerHTML = displayThreads.map(t => {
-            const rawTitle = typeof t.title === 'string' ? t.title : "Untitled Discourse";
-            const sourceMatch = rawTitle.match(/^\[(.*?)\] (.*)/);
-            const cleanTitle = sourceMatch ? sourceMatch[2] : rawTitle;
-            const isSaved = saved.includes(t._id);
-
-            return `
-            <div class="bg-postra-surface border border-postra-border rounded-xl hover:border-postra-muted transition-colors cursor-pointer flex flex-col mb-4 group" onclick="PostraApp.openThread('${t._id}')">
-                <div class="px-4 py-3 pb-2 flex-1">
-                    <!-- Header -->
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center gap-2 text-xs text-postra-muted">
-                            <div class="w-5 h-5 rounded-full bg-white flex items-center justify-center overflow-hidden">
-                                <img src="https://picsum.photos/seed/${t.category}/20" class="w-full h-full object-cover">
-                            </div>
-                            <span class="font-bold text-white hover:underline cursor-pointer">p/${t.category}</span>
-                            <span class="opacity-50 text-[10px]">•</span>
-                            <span>${Math.floor(Math.random() * 12) + 1} hr. ago</span>
-                        </div>
-                        <div class="flex items-center gap-2 relative">
-                            ${this.state.currentUser && this.state.currentUser.joinedBoards && this.state.currentUser.joinedBoards.includes(t.category) ? 
-                            `<button onclick="event.stopPropagation();" class="px-3 py-1 bg-transparent border border-postra-muted text-postra-muted text-xs font-bold rounded-full cursor-default">Joined</button>` 
-                            : `<button onclick="event.stopPropagation(); PostraApp.joinBoard('${t.category}')" class="px-3 py-1 bg-postra-blue text-white text-xs font-bold rounded-full hover:bg-blue-600 transition-colors">Join</button>`}
-                            
-                            <button onclick="event.stopPropagation(); PostraApp.toggleMenu('${t._id}')" class="w-8 h-8 flex items-center justify-center text-postra-muted hover:bg-postra-hover rounded-full transition-colors"><i class="fa-solid fa-ellipsis"></i></button>
-                            <div id="menu-${t._id}" class="hidden absolute right-0 top-full mt-1 w-32 bg-[#1a1a1b] border border-postra-border rounded-md shadow-lg z-20 py-1" onclick="event.stopPropagation();">
-                                <button onclick="PostraApp.saveThread('${t._id}')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-postra-hover flex items-center gap-2"><i class="fa-solid fa-bookmark text-postra-muted w-4"></i> <span id="save-text-${t._id}">${isSaved ? 'Unsave' : 'Save'}</span></button>
-                                <button onclick="PostraApp.hideThread('${t._id}')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-postra-hover flex items-center gap-2"><i class="fa-solid fa-eye-slash text-postra-muted w-4"></i> Hide</button>
-                                <button onclick="PostraApp.reportThread('${t._id}')" class="w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-postra-hover flex items-center gap-2"><i class="fa-solid fa-flag w-4"></i> Report</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Title -->
-                    <h2 class="text-lg font-semibold text-white mb-2 leading-tight">${cleanTitle}</h2>
-                    
-                    <!-- Description Snippet -->
-                    ${(t.description || '').length > 5 ? `<p class="text-[13px] text-postra-muted mb-4 line-clamp-3">${(t.description || '').split('\n\nLink: ')[0]}</p>` : ''}
-                </div>
-                
-                ${t.image ? `<div class="w-full bg-black overflow-hidden flex items-center justify-center max-h-[500px]"><img src="/api/proxy-image?url=${encodeURIComponent(t.image)}" onerror="this.parentElement.style.display='none'" class="w-full max-h-[500px] object-contain"></div>` : ''}
-                
-                <!-- Footer area -->
-                <div class="px-2 py-2 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                         <button onclick="event.stopPropagation(); PostraApp.openThread('${t._id}')" class="flex items-center gap-2 px-3 py-1.5 bg-postra-hover hover:bg-postra-border text-postra-text rounded-full transition-all text-[12px] font-bold">
-                              <i class="fa-regular fa-comment text-sm"></i> 
-                              <span>${t.commentCount || 30}</span>
-                         </button>
-                         <button onclick="event.stopPropagation();" class="flex items-center gap-2 px-3 py-1.5 bg-postra-hover hover:bg-postra-border text-postra-text rounded-full transition-all text-[12px] font-bold">
-                              <i class="fa-solid fa-share text-sm"></i>
-                              <span>Share</span>
-                         </button>
-                    </div>
-                    <span class="text-[9px] text-postra-muted font-bold tracking-widest uppercase opacity-20 pr-4">GRADE ${t.tagQualityScore || 125}</span>
-                </div>
-            </div>`;
-        }).join('');
-    },
-
-    toggleMenu(id) {
-        const menu = document.getElementById(`menu-${id}`);
-        const isHidden = menu.classList.contains('hidden');
-        document.querySelectorAll('[id^="menu-"]').forEach(el => el.classList.add('hidden'));
-        if (isHidden) menu.classList.remove('hidden');
-    },
-
-    saveThread(id) {
-        let saved = [];
-        try { saved = JSON.parse(localStorage.getItem('savedThreads') || '[]'); } catch(e) {}
-        const isSaved = saved.includes(id);
-        
-        if (isSaved) {
-            saved = saved.filter(tId => tId !== id);
-            alert('Post unsaved.');
-        } else {
-            saved.push(id);
-            alert('Post saved successfully.');
-        }
-        localStorage.setItem('savedThreads', JSON.stringify(saved));
-        this.renderThreads();
-    },
-
-    hideThread(id) {
-        let hidden = [];
-        try { hidden = JSON.parse(localStorage.getItem('hiddenThreads') || '[]'); } catch(e) {}
-        if (!hidden.includes(id)) {
-            hidden.push(id);
-            localStorage.setItem('hiddenThreads', JSON.stringify(hidden));
-        }
-        this.renderThreads();
-    },
-
-    reportThread(id) {
-        this.toggleMenu(id);
-        alert('Thank you for your report. The moderation team will review this discourse.');
-        this.hideThread(id);
-    },
-
-    setBoard(board) { 
-        const restricted = ['politics', 'healthcare'];
-        if(restricted.includes(board) && !this.state.token) { 
-            this.state.pendingBoard = board;
-            this.showLoginModal(); 
-            return; 
-        }
-        this.state.currentBoard = board; 
-        this.fetchThreads(board); 
-        this.renderSidebar(); 
-        const threadList = document.getElementById('thread-list');
-        if (threadList) threadList.innerHTML = `
-            <div class="text-center py-20 text-postra-muted" id="loader">
-                <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-4"></i>
-                <p class="font-bold tracking-widest text-sm">LOADING...</p>
-            </div>`;
-    },
-
-    renderSidebar() {
-        const list = document.getElementById('sidebar-boards');
-        if (list) {
-            list.innerHTML = this.state.boards.map(b => `
-                <li class="nav-item ${this.state.currentBoard === b ? 'bg-postra-hover rounded-md' : 'rounded-md hover:bg-postra-hover transition-colors'}">
-                    <a href="#" class="flex items-center gap-3 py-2 px-3 text-sm font-medium ${this.state.currentBoard === b ? 'text-white' : 'text-postra-muted hover:text-white'}" onclick="PostraApp.setBoard('${b}')">
-                        <div class="w-[6px] h-[6px] rounded-full bg-red-500"></div> 
-                        p/${b}
-                    </a>
-                </li>`).join('');
-        }
-        
-        const joinedSection = document.getElementById('joined-boards-section');
-        const joinedList = document.getElementById('sidebar-joined-boards');
-        if (joinedSection && joinedList) {
-            joinedSection.classList.remove('hidden');
-            if (this.state.currentUser && this.state.currentUser.joinedBoards && this.state.currentUser.joinedBoards.length > 0) {
-                joinedList.innerHTML = this.state.currentUser.joinedBoards.map(b => `
-                    <li class="nav-item ${this.state.currentBoard === b ? 'bg-postra-hover rounded-md' : 'rounded-md hover:bg-postra-hover transition-colors'}">
-                        <a href="#" class="flex items-center gap-3 py-2 px-3 text-sm font-medium ${this.state.currentBoard === b ? 'text-white' : 'text-postra-muted hover:text-white'}" onclick="PostraApp.setBoard('${b}')">
-                            <i class="fa-brands fa-diaspora text-postra-blue text-xs"></i>
-                            p/${b}
-                        </a>
-                    </li>`).join('');
-            } else {
-                joinedList.innerHTML = `<li class="text-xs text-postra-muted px-3 italic">You haven't joined any boards yet.</li>`;
-            }
-        }
-    },
-
-    async joinBoard(board) {
-        if (!this.state.token) {
-            this.showLoginModal();
-            return;
-        }
-        try {
-            const res = await fetch('/api/join-board', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-auth-token': this.state.token
-                },
-                body: JSON.stringify({ board })
-            });
-            if (res.ok) {
-                this.state.currentUser = await res.json();
-                this.renderSidebar();
-                this.renderThreads(); 
-                this.setBoard(board);
-            }
-        } catch(e) {}
-    },
-
-    async openThread(id) {
-        try {
-            const res = await fetch(`/api/threads/${id}`);
-            if(!res.ok) { this.showLoginModal(); return; }
-            const t = await res.json();
-            const cRes = await fetch(`/api/comments/${id}`);
-            const comments = await cRes.json();
-            this.renderThreadPage(t, comments);
-        } catch(e) { console.error("Thread Sync Conflict."); }
-    },
-
-    renderThreadPage(t, comments) {
-        const container = document.getElementById('main-content');
-        
-        const buildTree = (allComments, parentId = null) => {
-            return allComments.filter(c => c.parentId == parentId).map(c => ({
-                ...c,
-                replies: buildTree(allComments, c._id)
-            }));
-        };
-
-        const tree = buildTree(comments);
-
-        const highUtility = tree.filter(c => c.qualityColor === 'green');
-        const generalDiscourse = tree.filter(c => c.qualityColor === 'orange');
-        const lowUtility = tree.filter(c => c.qualityColor === 'red');
-
-        const rawTitle = typeof t.title === 'string' ? t.title : "Untitled Discourse";
-        const sourceMatch = rawTitle.match(/^\[(.*?)\] (.*)/);
-        const cleanTitle = sourceMatch ? sourceMatch[2] : rawTitle;
-
-        const rawDesc = typeof t.description === 'string' ? t.description : "";
-        const descriptionParts = rawDesc.split('\n\nLink: ');
-        const mainDesc = descriptionParts[0];
-
-        container.innerHTML = `
-            <div class="max-w-[740px] mx-auto py-4">
-                <button onclick="PostraApp.resetToHome()" class="text-[11px] font-bold text-postra-muted hover:text-white mb-6 uppercase tracking-wider flex items-center gap-2 group transition-all"><i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> Back</button>
-                <div class="bg-postra-surface border border-postra-border rounded-xl mb-6">
-                    <div class="p-6">
-                        <div class="flex items-center gap-2 text-xs text-postra-muted mb-4">
-                            <div class="w-6 h-6 rounded-full bg-white flex items-center justify-center overflow-hidden">
-                                <img src="https://picsum.photos/seed/${t.category}/30" class="w-full h-full object-cover">
-                            </div>
-                            <span class="font-bold text-white hover:underline cursor-pointer" onclick="PostraApp.setBoard('${t.category}')">p/${t.category}</span>
-                            <span class="opacity-50">•</span>
-                            <span>Posted by u/${t.author ? t.author.username || 'analyst' : 'analyst'} • 6 hr. ago</span>
-                            ${this.state.currentUser && this.state.currentUser.joinedBoards && this.state.currentUser.joinedBoards.includes(t.category) ? 
-                            `<button class="px-3 py-1 ml-2 bg-transparent border border-postra-muted text-postra-muted text-[10px] font-bold rounded-full cursor-default uppercase">Joined</button>` 
-                            : `<button onclick="PostraApp.joinBoard('${t.category}')" class="px-3 py-1 ml-2 bg-postra-blue text-white text-[10px] font-bold rounded-full hover:bg-blue-600 transition-colors uppercase tracking-wider">Join</button>`}
-                        </div>
-                        <h1 class="text-xl font-semibold mb-3 text-white">${cleanTitle}</h1>
-                        <p class="text-sm text-postra-text leading-relaxed mb-6 whitespace-pre-wrap">${mainDesc}</p>
-                    </div>
-                    ${t.image ? `<img src="/api/proxy-image?url=${encodeURIComponent(t.image)}" onerror="this.style.display='none'" class="w-full bg-black max-h-[500px] object-contain">` : ''}
-                </div>
-                
-                <!-- Main Comment Box -->
-                <div class="bg-postra-surface border border-postra-border rounded-lg p-4 mb-8">
-                    <p class="text-sm mb-2 text-white">Comment as <span class="font-bold text-postra-blue">${this.state.token ? this.state.currentUser?.username : 'guest'}</span></p>
-                    <textarea id="main-comment-input" class="w-full bg-postra-bg border border-postra-border rounded-md p-3 text-sm text-white focus:outline-none focus:border-postra-muted transition-colors min-h-[100px]" placeholder="What are your thoughts?"></textarea>
-                    <div class="flex justify-end mt-2">
-                        <button onclick="PostraApp.submitComment('${t._id}', null)" class="px-5 py-1.5 bg-postra-blue hover:bg-blue-600 transition-colors text-white rounded-full text-sm font-bold">Comment</button>
-                    </div>
-                </div>
-
-                <div class="space-y-6">
-                    ${this.renderCommentSection('Useful Information', 'border-green-500/30 bg-green-500/5', highUtility, t._id, 'text-green-500')}
-                    ${this.renderCommentSection('Average Discourse', 'border-orange-500/30 bg-orange-500/5', generalDiscourse, t._id, 'text-orange-500')}
-                    ${this.renderCommentSection('Memes / Waste', 'border-red-500/30 bg-red-500/5', lowUtility, t._id, 'text-red-500')}
-                </div>
-            </div>`;
-    },
-
-    renderCommentSection(title, bgClass, items, threadId, titleClass) {
-        if (!items || items.length === 0) return '';
-        return `
-            <div class="border rounded-xl ${bgClass} p-4 mt-4">
-                <h3 class="text-sm font-bold uppercase tracking-wider mb-4 ${titleClass}">${title}</h3>
-                <div class="space-y-4">
-                    ${items.map(c => this.renderCommentNode(c, threadId)).join('')}
-                </div>
-            </div>`;
-    },
-
-    renderCommentNode(c, threadId) {
-        const timeAgo = Math.floor(Math.random() * 5) + 1 + "h ago"; // MOCK
-        let badge = c.qualityColor === 'green' ? '<i class="fa-solid fa-circle-check text-green-500 ml-1"></i>' : 
-                   (c.qualityColor === 'red' ? '<i class="fa-solid fa-triangle-exclamation text-red-500 ml-1"></i>' : '');
-        
-        return `
-            <div class="flex flex-col mt-2">
-                <div class="flex items-center gap-2 text-xs text-postra-muted mb-1">
-                    <div class="w-6 h-6 rounded-full bg-postra-border flex items-center justify-center overflow-hidden">
-                        <img src="https://picsum.photos/seed/${c.author}/30" class="w-full h-full object-cover">
-                    </div>
-                    <span class="font-bold text-white hover:underline cursor-pointer">${c.author}</span>
-                    ${badge}
-                    <span>• ${timeAgo}</span>
-                </div>
-                <div class="text-sm text-postra-text pl-8 pr-4 whitespace-pre-wrap leading-relaxed">${c.content}</div>
-                <div class="flex items-center gap-3 pl-8 mt-2 text-[11px] font-bold text-postra-muted">
-                    <button class="hover:bg-postra-hover px-2 py-1 rounded transition-colors flex items-center gap-1" onclick="document.getElementById('reply-to-${c._id}').classList.toggle('hidden')">
-                        <i class="fa-regular fa-comment"></i> Reply
-                    </button>
-                    <button class="hover:bg-postra-hover px-2 py-1 rounded transition-colors flex items-center gap-1" onclick="PostraApp.tagHandler('Useful', '${c._id}', '${threadId}')">
-                        <i class="fa-solid fa-arrow-up text-green-500"></i> <span class="text-green-500">Useful</span> (${c.usefulTags || 0})
-                    </button>
-                    <button class="hover:bg-postra-hover px-2 py-1 rounded transition-colors flex items-center gap-1" onclick="PostraApp.tagHandler('Average', '${c._id}', '${threadId}')">
-                        <i class="fa-solid fa-minus text-orange-500"></i> <span class="text-orange-500">Average</span> (${c.averageTags || 0})
-                    </button>
-                    <button class="hover:bg-postra-hover px-2 py-1 rounded transition-colors flex items-center gap-1" onclick="PostraApp.tagHandler('Memes', '${c._id}', '${threadId}')">
-                        <i class="fa-solid fa-arrow-down text-red-500"></i> <span class="text-red-500">Memes</span> (${c.memeTags || 0})
-                    </button>
-                </div>
-                
-                <div id="reply-to-${c._id}" class="hidden pl-8 mt-3 relative">
-                    <!-- Threadline for reply box -->
-                    <div class="absolute left-3 top-0 bottom-0 w-[1px] bg-postra-border"></div>
-                    <textarea id="reply-input-${c._id}" class="w-full bg-postra-bg border border-postra-border rounded-md p-2 text-sm text-white focus:outline-none focus:border-postra-muted transition-colors min-h-[80px]" placeholder="Write a reply..."></textarea>
-                    <div class="flex justify-end mt-2">
-                        <button onclick="PostraApp.submitComment('${threadId}', '${c._id}')" class="px-4 py-1.5 bg-postra-blue hover:bg-blue-600 transition-colors text-white rounded-full text-[11px] font-bold">Reply</button>
-                    </div>
-                </div>
-                
-                ${c.replies && c.replies.length > 0 ? `
-                    <div class="pl-4 mt-2 ml-3 border-l border-postra-border/50 relative group">
-                        <div class="absolute left-[-1px] top-0 bottom-0 w-[2px] bg-postra-muted opacity-0 group-hover:opacity-50 transition-opacity cursor-pointer z-10"></div>
-                        ${c.replies.map(r => this.renderCommentNode(r, threadId)).join('')}
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    },
-
-    async submitComment(threadId, parentId) {
-        if (!this.state.token) {
-            this.showLoginModal();
-            return;
-        }
-        const inputId = parentId ? `reply-input-${parentId}` : 'main-comment-input';
-        const input = document.getElementById(inputId);
-        const content = input.value.trim();
-        if (!content) return;
-        
-        try {
-            const res = await fetch('/api/comments', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-auth-token': this.state.token
-                },
-                body: JSON.stringify({ threadId, parentId, content })
-            });
-            if (res.ok) {
-                input.value = '';
-                await this.openThread(threadId); // refresh
-            }
-        } catch(e) {}
-    },
-
-    async tagHandler(tagType, id, threadId) {
-        if (!this.state.token) {
-            this.showLoginModal();
-            return;
-        }
-        try {
-            await fetch(`/api/comments/${id}/tag`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-auth-token': this.state.token
-                },
-                body: JSON.stringify({ tagType })
-            });
-            await this.openThread(threadId); // refresh
-        } catch(e) {}
-    },
-
-    initAssistantProtocol() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitRecognition || window.webkitSpeechRecognition;
-        
-        const voiceTrigger = document.getElementById('voice-trigger');
-        const voicePanel = document.getElementById('voice-panel');
-        const closeVoice = document.getElementById('close-voice');
-        const sendBtn = document.getElementById('send-to-ai');
-        const input = document.getElementById('assistant-input');
-        const output = document.getElementById('voice-output');
-        
-        let headerText = voicePanel.querySelector('.flex.items-center.gap-2.text-white');
-
-        if (SpeechRecognition) {
-            this.assistantRecognition = new SpeechRecognition();
-            this.assistantRecognition.continuous = false; 
-            this.assistantRecognition.lang = 'en-US';
-            
-            this.assistantRecognition.onstart = () => {
-                if(headerText) headerText.innerHTML = '<span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Listening...';
-            };
-            this.assistantRecognition.onresult = (e) => { 
-                if(input) input.value = e.results[0][0].transcript; 
-                this.triggerAiBrain(); 
-            };
-            this.assistantRecognition.onend = () => {
-                if(headerText) headerText.innerHTML = 'Ask Postra';
-            };
-        }
-
-        if(voiceTrigger) {
-            voiceTrigger.onclick = () => { 
-                voicePanel.classList.toggle('hidden'); 
-                if(!voicePanel.classList.contains('hidden') && this.assistantRecognition) {
-                    try { this.assistantRecognition.start(); } catch(e){} 
-                }
-            };
-        }
-        if(closeVoice) {
-            closeVoice.onclick = () => { 
-                voicePanel.classList.add('hidden'); 
-                window.speechSynthesis.cancel(); 
-                if(this.assistantRecognition) this.assistantRecognition.stop(); 
-            };
-        }
-        if(sendBtn) sendBtn.onclick = () => this.triggerAiBrain();
-        if(input) input.onkeypress = (e) => { if(e.key === 'Enter') this.triggerAiBrain(); };
-
-        const stopBtn = document.getElementById('stop-task');
-        if(stopBtn) {
-            stopBtn.onclick = () => {
-                if (this.currentAiController) {
-                    this.currentAiController.abort();
-                }
-                window.speechSynthesis.cancel();
-                if(this.assistantRecognition) this.assistantRecognition.stop();
-                
-                const loadingIndicator = document.getElementById('ai-loading');
-                if (loadingIndicator) loadingIndicator.remove();
-                
-                stopBtn.classList.add('hidden');
-                
-                if (output) {
-                    output.innerHTML += `
-                        <div class="flex justify-start mb-3">
-                            <div class="bg-postra-border border border-postra-border/50 rounded-xl px-4 py-2 text-postra-text max-w-[95%]">
-                                <p class="text-[10px] font-bold uppercase tracking-wider opacity-50">Task Aborted.</p>
-                            </div>
-                        </div>`;
-                    output.scrollTop = output.scrollHeight;
-                }
-            };
-        }
-    },
-
-    async triggerAiBrain() {
-        const input = document.getElementById('assistant-input');
-        const output = document.getElementById('voice-output');
-        if(!input || !output) return;
-        
-        const query = input.value.trim();
-        if (!query) return;
-        
-        input.value = '';
-        output.innerHTML += `
-            <div class="flex justify-end mb-3">
-                <div class="bg-postra-hover rounded-tl-xl rounded-tr-xl rounded-bl-xl px-4 py-2 text-white max-w-[85%]">
-                    <p class="text-sm">"${query}"</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 text-postra-muted font-bold text-xs animate-pulse mb-3" id="ai-loading">
-                <i class="fa-solid fa-microchip"></i> Analyzing...
-            </div>`;
-            
-        output.scrollTop = output.scrollHeight;
-
-        const stopBtn = document.getElementById('stop-task');
-        if (stopBtn) stopBtn.classList.remove('hidden');
-
-        if (this.currentAiController) {
-            this.currentAiController.abort();
-        }
-        this.currentAiController = new AbortController();
-
-        try {
-            const res = await fetch('/api/ai/vapi', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ query }),
-                signal: this.currentAiController.signal
-            });
-            const result = await res.json();
-            
-            const loadingIndicator = document.getElementById('ai-loading');
-            if (loadingIndicator) loadingIndicator.remove();
-
-            if (result.answer) { 
-                output.innerHTML += `
-                    <div class="flex justify-start mb-3">
-                        <div class="bg-postra-bg border border-postra-border rounded-tl-xl rounded-tr-xl rounded-br-xl px-4 py-3 text-postra-text max-w-[95%]">
-                            <span class="text-[10px] font-bold text-postra-blue uppercase block mb-1">Intelligence Output</span>
-                            <p class="text-sm leading-relaxed">${result.answer}</p>
-                        </div>
-                    </div>`;
-                this.speakResponse(result.answer); 
-            } else {
-                if (stopBtn) stopBtn.classList.add('hidden');
-            }
-        } catch (e) { 
-            const loadingIndicator = document.getElementById('ai-loading');
-            if (loadingIndicator) loadingIndicator.remove();
-            
-            const stopBtn = document.getElementById('stop-task');
-            if (stopBtn) stopBtn.classList.add('hidden');
-
-            if (e.name !== 'AbortError') {
-                output.innerHTML += `
-                    <div class="flex justify-start mb-3">
-                        <div class="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-500 max-w-[95%]">
-                            <p class="text-xs font-bold uppercase tracking-wider">Analysis fault.</p>
-                        </div>
-                    </div>`;
-            }
-        }
-        output.scrollTop = output.scrollHeight;
-    },
-
-    speakResponse(text) { 
-        window.speechSynthesis.cancel(); 
-        const u = new SpeechSynthesisUtterance(text); 
-        
-        u.onend = () => {
-            const stopBtn = document.getElementById('stop-task');
-            if (stopBtn) stopBtn.classList.add('hidden');
-        };
-        u.onerror = () => {
-            const stopBtn = document.getElementById('stop-task');
-            if (stopBtn) stopBtn.classList.add('hidden');
-        };
-        
-        window.speechSynthesis.speak(u); 
-    },
-    
-    renderTrendingWidget() {
-        const list = document.getElementById('trending-widget-list');
-        const sorted = [...this.state.threads].sort((a,b) => (b.trendingScore || 0) - (a.trendingScore || 0)).slice(0, 3);
-        list.innerHTML = sorted.map((t, i) => {
-            const rawTitle = typeof t.title === 'string' ? t.title : "Untitled Discourse";
-            const cleanTitle = rawTitle.replace(/^\[.*?\]\s*/, '');
-            return `<div class="flex items-start gap-3 cursor-pointer group" onclick="PostraApp.openThread('${t._id}')"><span class="text-[13px] font-bold text-postra-muted mt-0.5">${i + 1}</span><div class="flex flex-col"><p class="text-[13px] font-medium leading-snug group-hover:underline text-postra-text">${cleanTitle.substring(0, 55)}...</p><span class="text-[10px] text-postra-muted font-semibold uppercase mt-1">p/${t.category}</span></div></div>`;
-        }).join('');
-    },
-
-    addEventListeners() {
-        document.addEventListener('click', () => {
-            document.querySelectorAll('[id^="menu-"]').forEach(el => el.classList.add('hidden'));
-        });
-        const openLogin = document.getElementById('open-login');
-        if (openLogin) openLogin.onclick = () => this.showLoginModal();
-
-        const logoHome = document.getElementById('logo-home');
-        if (logoHome) logoHome.onclick = () => this.setBoard('home');
-        
-        const openCreatePost = document.getElementById('open-create-post');
-        if (openCreatePost) openCreatePost.onclick = () => this.showCreatePostModal();
-
-        const openCreateComm = document.getElementById('open-create-comm');
-        if (openCreateComm) openCreateComm.onclick = () => this.showCreateBoardModal();
-        
-        const h = document.getElementById('feed-home'); if(h) h.onclick = () => this.setBoard('home');
-        const p = document.getElementById('feed-popular'); if(p) p.onclick = () => this.setBoard('popular');
-        const a = document.getElementById('feed-all'); if(a) a.onclick = () => this.setBoard('all');
-        const m = document.getElementById('feed-my-posts'); if(m) m.onclick = () => this.setBoard('my-posts');
-
-        const searchInput = document.getElementById('global-search');
-        if (searchInput) {
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    const query = e.target.value.trim().toLowerCase();
-                    if (query) {
-                        let targetBoard = query.startsWith('p/') ? query.substring(2) : query;
-                        this.setBoard(targetBoard);
-                        e.target.value = '';
-                    }
-                }
-            });
-        }
-    },
-
-    async showCreatePostModal() {
-        if (!this.state.token) { 
-            await this.handleInstantLogin();
-            if (!this.state.token) return; 
-        }
-
-        const container = document.getElementById('modal-container');
-        container.innerHTML = `
-            <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-[250] backdrop-blur-sm animate-fadeIn">
-                <div class="bg-postra-surface border border-postra-border p-6 rounded-xl w-full max-w-lg">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold text-white">Create a Post</h2>
-                        <button onclick="document.getElementById('modal-container').innerHTML = ''" class="text-postra-muted hover:text-white transition-all"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <select id="post-board" class="w-full bg-postra-bg border border-postra-border rounded-md p-2.5 text-sm text-white focus:outline-none focus:border-postra-muted transition-colors">
-                            ${this.state.boards.map(b => `<option value="${b}" ${b === this.state.currentBoard ? 'selected' : ''}>p/${b}</option>`).join('')}
-                        </select>
-                        
-                        <input type="text" id="post-title" placeholder="Title" class="w-full bg-postra-bg border border-postra-border rounded-md p-2.5 text-sm text-white focus:outline-none focus:border-postra-muted transition-colors">
-                        
-                        <textarea id="post-desc" placeholder="Text (optional)" class="w-full bg-postra-bg border border-postra-border rounded-md p-2.5 text-sm text-white focus:outline-none focus:border-postra-muted transition-colors min-h-[120px]"></textarea>
-                        
-                        <input type="text" id="post-image" placeholder="Image URL (optional)" class="w-full bg-postra-bg border border-postra-border rounded-md p-2.5 text-sm text-white focus:outline-none focus:border-postra-muted transition-colors">
-                        
-                        <div class="flex justify-end gap-2 mt-4">
-                            <button onclick="document.getElementById('modal-container').innerHTML = ''" class="px-4 py-2 text-sm font-bold text-postra-muted hover:text-white transition-all rounded-full border border-transparent hover:border-postra-border">Cancel</button>
-                            <button onclick="PostraApp.submitPost()" class="px-6 py-2 bg-postra-blue text-white text-sm font-bold rounded-full hover:bg-blue-600 transition-all">Post</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-    },
-
-    async submitPost() {
-        const title = document.getElementById('post-title').value.trim();
-        const category = document.getElementById('post-board').value;
-        const description = document.getElementById('post-desc').value.trim();
-        const image = document.getElementById('post-image').value.trim();
-        
-        if (!title) return alert("Title is required");
-
-        try {
-            const res = await fetch('/api/threads', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-auth-token': this.state.token
-                },
-                body: JSON.stringify({ title, description, category, image })
-            });
-
-            if (res.ok) {
-                document.getElementById('modal-container').innerHTML = '';
-                this.setBoard(category);
-            } else {
-                alert("Error creating post");
-            }
-        } catch(e) {
-            console.error("Error submitting post", e);
-            alert("Error creating post");
-        }
-    },
-
-    async showCreateBoardModal() {
-        if (!this.state.token) { 
-            await this.handleInstantLogin();
-            if (!this.state.token) return; 
-        }
-
-        const container = document.getElementById('modal-container');
-        container.innerHTML = `
-            <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-[250] backdrop-blur-sm animate-fadeIn">
-                <div class="bg-postra-surface border border-postra-border p-6 rounded-xl w-full max-w-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold text-white">Create a Community</h2>
-                        <button onclick="document.getElementById('modal-container').innerHTML = ''" class="text-postra-muted hover:text-white transition-all"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-xs text-postra-muted font-bold tracking-wider mb-1 block uppercase">Community Name</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-2.5 text-postra-muted text-sm font-bold">p/</span>
-                                <input type="text" id="board-name" class="w-full bg-postra-bg border border-postra-border rounded-md py-2.5 pl-7 pr-3 text-sm text-white focus:outline-none focus:border-postra-muted transition-colors" placeholder="community_name">
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-end gap-2 mt-6">
-                            <button onclick="document.getElementById('modal-container').innerHTML = ''" class="px-4 py-2 text-sm font-bold text-postra-muted hover:text-white transition-all rounded-full border border-transparent hover:border-postra-border">Cancel</button>
-                            <button onclick="PostraApp.submitBoard()" class="px-6 py-2 bg-postra-blue text-white text-sm font-bold rounded-full hover:bg-blue-600 transition-all">Create</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-    },
-
-    async submitBoard() {
-        let boardName = document.getElementById('board-name').value.trim().toLowerCase();
-        boardName = boardName.replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-        
-        if (!boardName) return alert("Community name is required");
-
-        if (!this.state.boards.includes(boardName)) {
-            this.state.boards.push(boardName);
-        }
-        
-        await this.joinBoard(boardName);
-        document.getElementById('modal-container').innerHTML = '';
-        this.renderSidebar();
-    },
-
-    updateStats() {
-        const el = document.getElementById('status-threads');
-        if (el) el.innerText = this.state.threads.length || 0; 
-    },
-    
-    showLoginModal() {
-        const container = document.getElementById('modal-container');
-        container.innerHTML = `
-            <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-[250] backdrop-blur-sm animate-fadeIn">
-                <div class="bg-postra-surface border border-postra-border p-8 rounded-2xl w-full max-w-sm text-center">
-                    <h2 class="text-xl font-bold mb-4 text-white">Log In Required</h2>
-                    <p class="text-sm text-postra-muted mb-8">Access restricted.</p>
-                    <button onclick="PostraApp.handleInstantLogin()" class="w-full py-3 bg-postra-blue text-white font-bold rounded-full hover:bg-blue-600 transition-all">Instant Guest Login</button>
-                    <button class="w-full mt-4 text-xs font-semibold text-postra-muted hover:text-white transition-all" onclick="document.getElementById('modal-container').innerHTML = ''">Close</button>
-                </div>
-            </div>`;
-    },
-
-    async handleInstantLogin() {
-        try {
-            const res = await fetch('/api/auth/guest', { method: 'POST' });
-            if(res.ok) {
-                const r = await res.json();
-                localStorage.setItem('token', r.token);
-                this.state.token = r.token; this.state.currentUser = r.user;
-                document.getElementById('modal-container').innerHTML = '';
-                this.updateAuthUI(); 
-                if (this.state.pendingBoard) {
-                    this.setBoard(this.state.pendingBoard);
-                    this.state.pendingBoard = null;
-                } else {
-                    await this.fetchThreads(this.state.currentBoard); 
-                }
-            }
-        } catch(e) {}
-    },
-
-    updateAuthUI() { document.getElementById('auth-controls').innerHTML = `<div class="flex items-center gap-4"><p class="text-xs text-postra-text font-bold">${this.state.currentUser.username}</p><button onclick="PostraApp.logout()" class="text-postra-muted hover:text-white transition-all"><i class="fa-solid fa-power-off"></i></button></div>`; },
-    logout() { localStorage.removeItem('token'); location.reload(); },
-
-    resetToHome() {
-        const container = document.getElementById('main-content');
-        container.innerHTML = `
-            <div id="feed-container" class="max-w-[740px] mx-auto space-y-4">
-                <div class="bg-postra-surface border border-postra-border rounded-md p-2 flex items-center gap-2 mb-4 hover:border-postra-muted transition-colors cursor-text" onclick="PostraApp.showCreatePostModal()">
-                    <div class="w-8 h-8 rounded-full bg-postra-hover flex items-center justify-center text-postra-muted ml-2">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-                    <div class="flex-1 bg-postra-hover border border-postra-border hover:border-postra-muted rounded-md py-2 px-4 mx-2 text-sm text-postra-muted transition-colors text-left flex items-center h-10">
-                        Create Post
-                    </div>
-                    <button class="w-10 h-10 flex items-center justify-center text-postra-muted hover:bg-postra-hover rounded-md transition-all mr-1" onclick="PostraApp.showCreatePostModal()">
-                        <i class="fa-regular fa-image text-lg"></i>
-                    </button>
-                </div>
-                <div id="thread-list" class="space-y-3"></div>
-            </div>`;
-        this.setBoard('home');
-    }
+// Global Application State Object
+let state = {
+    role: "", // customer, employee, admin
+    user: null, // Logged in user: { id, name, email, role, elevatorId, roleDetail }
+    impersonating: false,
+    adminUser: null, // Remembers original admin user when impersonating
+    elevators: [],
+    employees: [],
+    tickets: [],
+    attendance: [],
+    notifications: []
 };
 
-document.addEventListener('DOMContentLoaded', () => PostraApp.init());
+// 2. LocalStorage Helpers
+function saveStateToStorage(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+function getOrInitializeStorage(key, initialData) {
+    const data = localStorage.getItem(key);
+    if (!data) {
+        localStorage.setItem(key, JSON.stringify(initialData));
+        return initialData;
+    }
+    return JSON.parse(data);
+}
+
+function loadStateFromStorage() {
+    state.elevators = getOrInitializeStorage("ge_elevators", INITIAL_ELEVATORS);
+    state.employees = getOrInitializeStorage("ge_employees", INITIAL_EMPLOYEES);
+    state.tickets = getOrInitializeStorage("ge_tickets", INITIAL_TICKETS);
+    state.attendance = getOrInitializeStorage("ge_attendance", INITIAL_ATTENDANCE);
+    state.notifications = getOrInitializeStorage("ge_notifications", INITIAL_NOTIFICATIONS);
+    loadSession();
+}
+
+function saveSession(user, role, impersonating = false, adminUser = null) {
+    state.user = user;
+    state.role = role;
+    state.impersonating = impersonating;
+    state.adminUser = adminUser;
+    saveStateToStorage("ge_session", { user, role, impersonating, adminUser });
+}
+
+function clearSession() {
+    state.user = null;
+    state.role = "";
+    state.impersonating = false;
+    state.adminUser = null;
+    localStorage.removeItem("ge_session");
+}
+
+function loadSession() {
+    const session = localStorage.getItem("ge_session");
+    if (session) {
+        const parsed = JSON.parse(session);
+        state.user = parsed.user;
+        state.role = parsed.role;
+        state.impersonating = parsed.impersonating || false;
+        state.adminUser = parsed.adminUser || null;
+    }
+}
+
+// System Notification dispatch utility
+function addNotification(msg) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    
+    state.notifications.unshift({
+        message: msg,
+        time: `Today, ${timeStr}`
+    });
+    
+    // Cap notifications at 10 items
+    if (state.notifications.length > 10) {
+        state.notifications.pop();
+    }
+    
+    saveStateToStorage("ge_notifications", state.notifications);
+}
+
+// 3. Application Lifecycle Entrypoint
+window.onload = function() {
+    initApp();
+};
+
+function initApp() {
+    loadStateFromStorage();
+    setupClock();
+    mockGetLocation();
+    
+    // Check if any admin exists in the database
+    const adminExists = state.employees.some(emp => emp.role === "admin");
+    
+    if (!adminExists) {
+        // Force First-Time Admin Setup
+        showAuthView("admin-setup");
+        document.getElementById("splash-screen").classList.remove("hidden");
+        document.getElementById("app-container").classList.add("hidden");
+    } else {
+        if (state.user) {
+            // Restore existing session
+            document.getElementById("splash-screen").classList.add("hidden");
+            document.getElementById("app-container").classList.remove("hidden");
+            switchPortal(state.role);
+        } else {
+            // Redirect to sign in
+            showAuthView("login");
+            document.getElementById("splash-screen").classList.remove("hidden");
+            document.getElementById("app-container").classList.add("hidden");
+        }
+    }
+}
+
+// -- Auth Views Controllers
+function showAuthView(viewName) {
+    document.getElementById("auth-login-view").classList.add("hidden");
+    document.getElementById("auth-setup-view").classList.add("hidden");
+    document.getElementById("auth-admin-setup-view").classList.add("hidden");
+    
+    // Clear errors
+    const loginError = document.getElementById("login-error");
+    const setupError = document.getElementById("setup-error");
+    if (loginError) loginError.classList.add("hidden");
+    if (setupError) setupError.classList.add("hidden");
+
+    if (viewName === "login") {
+        document.getElementById("auth-login-view").classList.remove("hidden");
+    } else if (viewName === "setup") {
+        document.getElementById("auth-setup-view").classList.remove("hidden");
+    } else if (viewName === "admin-setup") {
+        document.getElementById("auth-admin-setup-view").classList.remove("hidden");
+    }
+}
+
+function handleAuthLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById("login-email").value.trim().toLowerCase();
+    const pass = document.getElementById("login-password").value;
+    const errorDiv = document.getElementById("login-error");
+
+    const user = state.employees.find(emp => emp.email.toLowerCase() === email);
+    if (!user || user.password !== pass) {
+        errorDiv.textContent = "Invalid email address or password.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    // Role mapping: admin -> admin, technician/inspector -> employee, customer -> customer
+    let role = "customer";
+    if (user.role === "admin") role = "admin";
+    else if (user.role === "technician" || user.role === "inspector") role = "employee";
+
+    saveSession(user, role);
+    
+    // Reset forms
+    document.getElementById("login-form").reset();
+    
+    // Switch views
+    document.getElementById("splash-screen").classList.add("hidden");
+    document.getElementById("app-container").classList.remove("hidden");
+    switchPortal(role);
+}
+
+function handleAuthSetup(e) {
+    e.preventDefault();
+    const email = document.getElementById("setup-email").value.trim().toLowerCase();
+    const password = document.getElementById("setup-password").value;
+    const confirm = document.getElementById("setup-confirm").value;
+    const errorDiv = document.getElementById("setup-error");
+
+    if (password.length < 6) {
+        errorDiv.textContent = "Password must be at least 6 characters long.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    if (password !== confirm) {
+        errorDiv.textContent = "Passwords do not match.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    const idx = state.employees.findIndex(emp => emp.email.toLowerCase() === email);
+    if (idx === -1) {
+        errorDiv.textContent = "This email is not pre-registered. Contact GE admin.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    const user = state.employees[idx];
+    if (user.password) {
+        errorDiv.textContent = "Password has already been set up. Please log in.";
+        errorDiv.classList.remove("hidden");
+        return;
+    }
+
+    state.employees[idx].password = password;
+    saveStateToStorage("ge_employees", state.employees);
+    addNotification(`User ${user.name} configured their password.`);
+    alert("Password registered successfully! Please log in.");
+    
+    document.getElementById("setup-password-form").reset();
+    showAuthView("login");
+}
+
+function handleAdminSetup(e) {
+    e.preventDefault();
+    const name = document.getElementById("admin-setup-name").value.trim();
+    const email = document.getElementById("admin-setup-email").value.trim().toLowerCase();
+    const password = document.getElementById("admin-setup-password").value;
+
+    const newAdmin = {
+        id: "EMP-101",
+        name: name,
+        email: email,
+        password: password,
+        role: "admin",
+        phone: "+91 9999999999",
+        status: "Active",
+        roleDetail: "Platform Super Administrator"
+    };
+
+    state.employees = [newAdmin];
+    saveStateToStorage("ge_employees", state.employees);
+    addNotification("Primary administrator account initialized.");
+    alert("System Admin account registered! You can now sign in.");
+    
+    document.getElementById("admin-setup-form").reset();
+    showAuthView("login");
+}
+
+// -- Portal Switching & Impersonation
+function switchPortal(role) {
+    state.role = role;
+    
+    // Toggle nav sections
+    document.getElementById("menu-customer").classList.add("hidden");
+    document.getElementById("menu-employee").classList.add("hidden");
+    document.getElementById("menu-admin").classList.add("hidden");
+    document.getElementById(`menu-${role}`).classList.remove("hidden");
+
+    // Route to default tab depending on portal role
+    const defaultTabMap = {
+        "customer": "cust-dash",
+        "employee": "emp-dash",
+        "admin": "admin-dash"
+    };
+
+    switchTab(defaultTabMap[role]);
+    
+    // Update Profile details in Sidebar
+    document.getElementById("nav-user-name").textContent = state.user.name;
+    document.getElementById("nav-user-role").textContent = state.user.roleDetail || state.user.role.toUpperCase();
+    document.getElementById("nav-avatar-char").textContent = state.user.name.charAt(0);
+
+    // Setup Admin Impersonator Switcher dropdown
+    const switcher = document.getElementById("admin-override-switcher");
+    if (switcher) {
+        // Show only if actual user is Admin (or we are currently impersonating)
+        const isActualAdmin = state.impersonating || (state.user && state.user.role === "admin");
+        if (isActualAdmin) {
+            switcher.classList.remove("hidden");
+            renderImpersonatorSelectOptions();
+        } else {
+            switcher.classList.add("hidden");
+        }
+    }
+
+    // Toggle Impersonation Banner visibility
+    const banner = document.getElementById("impersonation-banner");
+    const bannerText = document.getElementById("impersonation-banner-text");
+    if (banner && bannerText) {
+        if (state.impersonating) {
+            banner.classList.remove("hidden");
+            bannerText.textContent = `⚠️ Impersonating Active: ${state.user.name} (${state.user.role.toUpperCase()} VIEW)`;
+        } else {
+            banner.classList.add("hidden");
+        }
+    }
+
+    // Refresh views
+    renderActivePortalViews();
+}
+
+function renderImpersonatorSelectOptions() {
+    const custGroup = document.getElementById("impersonate-optgroup-customers");
+    const techGroup = document.getElementById("impersonate-optgroup-techs");
+    const select = document.getElementById("admin-impersonate-select");
+    if (!custGroup || !techGroup || !select) return;
+
+    custGroup.innerHTML = "";
+    techGroup.innerHTML = "";
+
+    // Load active customers
+    const customers = state.employees.filter(emp => emp.role === "customer");
+    custGroup.innerHTML = customers.map(c => `<option value="cust_${c.id}">${c.name}</option>`).join("");
+
+    // Load active technicians
+    const techs = state.employees.filter(emp => emp.role === "technician" || emp.role === "inspector");
+    techGroup.innerHTML = techs.map(t => `<option value="tech_${t.id}">${t.name} (${t.role})</option>`).join("");
+
+    // Set select value based on state
+    if (state.impersonating) {
+        select.value = `${state.role === 'customer' ? 'cust_' : 'tech_'}${state.user.id}`;
+    } else {
+        select.value = "";
+    }
+}
+
+function handleAdminImpersonateSelect(val) {
+    if (!val) {
+        endImpersonation();
+        return;
+    }
+
+    const type = val.split("_")[0];
+    const id = val.substring(type.length + 1);
+
+    const userToImpersonate = state.employees.find(emp => emp.id === id);
+    if (!userToImpersonate) return;
+
+    // Cache original admin user
+    const originalAdmin = state.impersonating ? state.adminUser : state.user;
+
+    // Perform override
+    let targetRole = "customer";
+    if (userToImpersonate.role === "technician" || userToImpersonate.role === "inspector") {
+        targetRole = "employee";
+    }
+
+    saveSession(userToImpersonate, targetRole, true, originalAdmin);
+    switchPortal(targetRole);
+}
+
+function endImpersonation() {
+    if (!state.impersonating || !state.adminUser) return;
+    
+    const admin = state.adminUser;
+    saveSession(admin, "admin", false, null);
+    
+    // Clear select value
+    const select = document.getElementById("admin-impersonate-select");
+    if (select) select.value = "";
+
+    switchPortal("admin");
+}
+
+function logout() {
+    clearSession();
+    window.location.reload();
+}
+
+function switchTab(tabId) {
+    // Hide tabs
+    document.querySelectorAll(".page-tab").forEach(tab => tab.classList.add("hidden"));
+    
+    // Show active tab
+    const activeTab = document.getElementById(tabId);
+    if (activeTab) {
+        activeTab.classList.remove("hidden");
+    }
+
+    // Nav-Item highlighting
+    document.querySelectorAll(".nav-item").forEach(btn => {
+        btn.classList.remove("active");
+    });
+    
+    // Find active sidebar link and add class
+    const sidebarLink = Array.from(document.querySelectorAll(".nav-item")).find(link => {
+        return link.getAttribute("onclick").includes(`'${tabId}'`);
+    });
+    if (sidebarLink) {
+        sidebarLink.classList.add("active");
+    }
+
+    // Set page title
+    const pageTitleMap = {
+        "cust-dash": "Customer Dashboard",
+        "cust-install": "Track Installation Progress",
+        "cust-services": "Service & Maintenance Requests",
+        "emp-dash": "Employee Dashboard",
+        "emp-attendance": "GPS Attendance Marking",
+        "emp-tasks": "Assigned Tasks & Reports",
+        "admin-dash": "Admin Control Dashboard",
+        "admin-projects": "Active Project Tracking",
+        "admin-tickets": "Service Tickets Intake",
+        "admin-attendance": "Staff Clock In Logs",
+        "admin-employees": "Staff Directory Management"
+    };
+    
+    document.getElementById("page-title").textContent = pageTitleMap[tabId] || "Dashboard";
+    
+    // Render dynamic updates on tab change
+    renderActivePortalViews();
+}
+
+// 5. Clock and GPS Systems (Real-time checks)
+function setupClock() {
+    setInterval(() => {
+        const now = new Date();
+        const clockElems = document.querySelectorAll("#live-clock");
+        const dateElems = document.querySelectorAll("#live-date");
+        clockElems.forEach(el => {
+            if (el) el.textContent = now.toLocaleTimeString();
+        });
+        dateElems.forEach(el => {
+            if (el) el.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        });
+    }, 1000);
+}
+
+function mockGetLocation() {
+    const geoIndicator = document.getElementById("geo-status-indicator");
+    if (!geoIndicator) return;
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                geoIndicator.innerHTML = `
+                    <div class="status-dot green"></div>
+                    <span>GPS Coordinates Secured: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}</span>
+                `;
+                geoIndicator.dataset.lat = position.coords.latitude;
+                geoIndicator.dataset.lng = position.coords.longitude;
+            },
+            () => {
+                // Fallback to simulated location if blocked
+                geoIndicator.innerHTML = `
+                    <div class="status-dot green"></div>
+                    <span>Simulated GPS Location Active: Worli Site C (19.0180, 72.8152)</span>
+                `;
+                geoIndicator.dataset.lat = 19.0180;
+                geoIndicator.dataset.lng = 72.8152;
+            }
+        );
+    }
+}
+
+// 6. Dynamic Rendering System
+function renderActivePortalViews() {
+    loadStateFromStorage();
+    
+    // Renders custom lists depending on role
+    if (state.role === "customer") {
+        renderCustomerDashboard();
+        renderCustomerInstallationProgress();
+        renderCustomerServiceOptions();
+    } else if (state.role === "employee") {
+        renderEmployeeDashboard();
+        renderEmployeeAttendanceLog();
+        renderEmployeeTaskList();
+    } else if (state.role === "admin") {
+        renderAdminDashboard();
+        renderAdminProjects();
+        renderAdminTickets();
+        renderAdminAttendance();
+        renderAdminEmployeesList();
+    }
+
+    renderNotificationsList();
+}
+
+// -- A. Customer Render Functions
+function renderCustomerDashboard() {
+    const elevatorList = document.getElementById("customer-elevator-list");
+    if (!elevatorList) return;
+
+    // Load installations active for Client
+    const clientElevators = state.elevators.filter(el => el.clientEmail === state.user.email);
+    
+    elevatorList.innerHTML = "";
+    
+    if (clientElevators.length === 0) {
+        elevatorList.innerHTML = "<p class='text-muted'>No elevator units registered under your profile.</p>";
+        const progressElem = document.getElementById("cust-stat-install-progress");
+        if (progressElem) progressElem.textContent = "No Projects";
+        const ticketsCountElem = document.getElementById("cust-stat-active-tickets");
+        if (ticketsCountElem) ticketsCountElem.textContent = "0 Active Requests";
+        return;
+    }
+
+    clientElevators.forEach(el => {
+        const isActiveInstall = el.progress < 100;
+        elevatorList.innerHTML += `
+            <div class="elevator-item">
+                <div class="elevator-item-left">
+                    <h4>${el.buildingName}</h4>
+                    <p>Model: ${el.model} | ID: ${el.id}</p>
+                    <p class="subtext">Status: <strong>${isActiveInstall ? 'Under Installation' : 'Active & Certified'}</strong></p>
+                </div>
+                <div class="elevator-item-right">
+                    ${isActiveInstall ? 
+                      `<span class="badge badge-warning">Progress: ${el.progress}%</span>
+                       <button class="btn btn-outline-gold btn-sm" onclick="switchTab('cust-install')">Track Progress</button>` 
+                      : `<span class="badge badge-success">Running Normal</span>
+                         <span class="subtext">Last Maintenance: Completed</span>`
+                    }
+                </div>
+            </div>
+        `;
+    });
+
+    // Stats updates
+    const activeInstall = clientElevators.find(el => el.progress < 100);
+    const progressText = activeInstall ? 
+        `${activeInstall.stages[activeInstall.currentStage].name} (${activeInstall.progress}%)` : "All Projects Completed";
+    
+    const progressElem = document.getElementById("cust-stat-install-progress");
+    if (progressElem) progressElem.textContent = progressText;
+    
+    // Filter tickets related to this customer's elevators
+    const clientElevatorIds = clientElevators.map(el => el.id);
+    const activeTicketsCount = state.tickets.filter(tk => clientElevatorIds.includes(tk.elevatorId) && tk.status !== "completed").length;
+    const ticketsCountElem = document.getElementById("cust-stat-active-tickets");
+    if (ticketsCountElem) ticketsCountElem.textContent = `${activeTicketsCount} Active Requests`;
+}
+
+function renderCustomerInstallationProgress() {
+    const progressList = document.getElementById("install-steps-list");
+    if (!progressList) return;
+
+    // Use first customer elevator
+    const clientElevators = state.elevators.filter(el => el.clientEmail === state.user.email);
+    const project = clientElevators.find(el => el.progress < 100) || clientElevators[0];
+    
+    if (!project) {
+        document.getElementById("cust-track-building-name").textContent = "No active projects";
+        document.getElementById("cust-track-handover-date").textContent = "--";
+        document.getElementById("cust-track-percentage").textContent = "0%";
+        document.getElementById("cust-track-bar").style.width = "0%";
+        progressList.innerHTML = "<p class='text-muted text-center'>No projects found under your profile.</p>";
+        return;
+    }
+
+    document.getElementById("cust-track-building-name").textContent = project.buildingName;
+    document.getElementById("cust-track-handover-date").textContent = new Date(project.handoverDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+    document.getElementById("cust-track-percentage").textContent = `${project.progress}%`;
+    document.getElementById("cust-track-bar").style.width = `${project.progress}%`;
+
+    progressList.innerHTML = "";
+    project.stages.forEach((st, idx) => {
+        let statusClass = "pending";
+        let badgeText = "Upcoming";
+        let statusBadgeClass = "badge-info";
+
+        if (st.status === "completed") {
+            statusClass = "completed";
+            badgeText = "Completed";
+            statusBadgeClass = "badge-success";
+        } else if (st.status === "in-progress") {
+            statusClass = "in-progress";
+            badgeText = "In Progress";
+            statusBadgeClass = "badge-warning";
+        }
+
+        progressList.innerHTML += `
+            <div class="timeline-step ${statusClass}">
+                <div class="step-marker"></div>
+                <div class="step-content">
+                    <div class="step-content-header">
+                        <h4>Stage ${idx + 1}: ${st.name}</h4>
+                        <span class="badge ${statusBadgeClass}">${badgeText}</span>
+                    </div>
+                    <p>Milestone targets include engineering signoff and calibration verification protocols.</p>
+                    ${st.date ? `<div class="step-meta"><span>Date Completed:</span><span>${st.date}</span></div>` : ""}
+                </div>
+            </div>
+        `;
+    });
+}
+
+function renderCustomerServiceOptions() {
+    const selectElevator = document.getElementById("ticket-elevator");
+    const ticketHistory = document.getElementById("customer-ticket-list");
+    if (!selectElevator || !ticketHistory) return;
+
+    const clientElevators = state.elevators.filter(el => el.clientEmail === state.user.email);
+
+    // Options dropdown
+    selectElevator.innerHTML = clientElevators.map(el => `<option value="${el.id}">${el.buildingName}</option>`).join("");
+
+    // History
+    ticketHistory.innerHTML = "";
+    const clientElevatorIds = clientElevators.map(el => el.id);
+    const customerTickets = state.tickets.filter(tk => clientElevatorIds.includes(tk.elevatorId));
+
+    if (customerTickets.length === 0) {
+        ticketHistory.innerHTML = "<p class='text-muted text-center'>No service logs found.</p>";
+        return;
+    }
+
+    customerTickets.forEach(tk => {
+        let badgeColor = "badge-info";
+        if (tk.status === "completed") badgeColor = "badge-success";
+        if (tk.status === "assigned") badgeColor = "badge-warning";
+        if (tk.category.includes("SOS") || tk.category.includes("Emergency")) badgeColor = "badge-danger";
+
+        ticketHistory.innerHTML += `
+            <div class="ticket-card-item">
+                <div class="ticket-card-header">
+                    <h4>${tk.category}</h4>
+                    <span class="badge ${badgeColor}">${tk.status}</span>
+                </div>
+                <p><strong>Building:</strong> ${tk.elevatorName}</p>
+                <p><strong>Notes:</strong> ${tk.description}</p>
+                <div class="ticket-tech-tag">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Technician: ${tk.technicianName}</span>
+                </div>
+                ${tk.resolutionNote ? `
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.08);">
+                        <p class="text-success" style="margin-bottom:6px;"><strong>Fix Note:</strong> ${tk.resolutionNote}</p>
+                        ${tk.signatureData ? `
+                            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
+                                <div>
+                                    <span class="subtext text-muted" style="font-size:0.75rem; display:block;">Client Signoff:</span>
+                                    <strong style="font-size:0.85rem; color:var(--text-main);">${tk.signatureName}</strong>
+                                </div>
+                                <img src="${tk.signatureData}" alt="Customer Signature" style="height: 35px; border-bottom: 1px solid rgba(255,255,255,0.2); filter: brightness(1.3) contrast(1.2);" />
+                            </div>
+                        ` : ""}
+                    </div>
+                ` : ""}
+            </div>
+        `;
+    });
+}
+
+// -- B. Employee Render Functions
+function renderEmployeeDashboard() {
+    const miniTasks = document.getElementById("employee-dashboard-task-list");
+    if (!miniTasks) return;
+
+    // Filter tasks assigned to Amit Sharma (EMP-102)
+    const empTasks = state.tickets.filter(tk => tk.technicianId === state.user.id && tk.status !== "completed");
+    const empProjects = state.elevators.filter(el => el.progress < 100); // Active project installs
+
+    miniTasks.innerHTML = "";
+
+    if (empTasks.length === 0 && empProjects.length === 0) {
+        miniTasks.innerHTML = "<p class='text-muted'>No tasks assigned for today. Safety first!</p>";
+        return;
+    }
+
+    // List service tickets
+    empTasks.forEach(tk => {
+        miniTasks.innerHTML += `
+            <div class="elevator-item">
+                <div class="elevator-item-left">
+                    <h4>🔧 Repair: ${tk.elevatorName}</h4>
+                    <p>Issue: ${tk.category}</p>
+                    <p class="subtext">Instruction: ${tk.description}</p>
+                </div>
+                <div class="elevator-item-right">
+                    <span class="badge badge-warning">Service Request</span>
+                    <button class="btn btn-outline-gold btn-sm" onclick="switchTab('emp-tasks')">Open Ticket</button>
+                </div>
+            </div>
+        `;
+    });
+
+    // List installation projects
+    empProjects.forEach(el => {
+        miniTasks.innerHTML += `
+            <div class="elevator-item">
+                <div class="elevator-item-left">
+                    <h4>🏗 Installation: ${el.buildingName}</h4>
+                    <p>Current Stage: ${el.stages[el.currentStage].name}</p>
+                    <p class="subtext">Overall Progress: ${el.progress}%</p>
+                </div>
+                <div class="elevator-item-right">
+                    <span class="badge badge-info">Project Install</span>
+                    <button class="btn btn-outline-gold btn-sm" onclick="switchTab('emp-tasks')">Update Stages</button>
+                </div>
+            </div>
+        `;
+    });
+
+    // Quick stats updates
+    document.getElementById("emp-stat-assigned-tasks").textContent = `${empTasks.length + empProjects.length} Tasks`;
+
+    // Attendance card check
+    const todayStr = new Date().toDateString();
+    const log = state.attendance.find(at => at.employeeId === state.user.id && at.date === todayStr);
+
+    if (log) {
+        document.getElementById("emp-stat-attendance-status").textContent = "Present";
+        document.getElementById("emp-stat-attendance-time").textContent = `Checked In at ${log.checkIn}`;
+        
+        // Disable clock-in, show clock-out
+        document.getElementById("btn-clock-in").classList.add("hidden");
+        
+        const successPanel = document.getElementById("clock-success-panel");
+        const statusLabel = document.getElementById("clock-status-label");
+        const coordsText = document.getElementById("attendance-coords");
+
+        if (log.checkOut) {
+            document.getElementById("btn-clock-out").classList.add("hidden");
+            if (successPanel) successPanel.classList.remove("hidden");
+            if (statusLabel) statusLabel.textContent = `Clocked Out at ${log.checkOut}`;
+        } else {
+            document.getElementById("btn-clock-out").classList.remove("hidden");
+            if (successPanel) successPanel.classList.remove("hidden");
+            if (statusLabel) statusLabel.textContent = `Clocked In at ${log.checkIn}`;
+        }
+        if (coordsText) coordsText.textContent = `Location: ${log.location}`;
+    } else {
+        document.getElementById("emp-stat-attendance-status").textContent = "Absent";
+        document.getElementById("emp-stat-attendance-time").textContent = "Check-in required";
+        document.getElementById("btn-clock-in").classList.remove("hidden");
+        document.getElementById("btn-clock-out").classList.add("hidden");
+        const successPanel = document.getElementById("clock-success-panel");
+        if (successPanel) successPanel.classList.add("hidden");
+    }
+}
+
+function renderEmployeeAttendanceLog() {
+    const tableBody = document.getElementById("employee-clock-table-body");
+    if (!tableBody) return;
+
+    const myLogs = state.attendance.filter(at => at.employeeId === state.user.id);
+    tableBody.innerHTML = "";
+
+    if (myLogs.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='4' class='text-center text-muted'>No check-ins logged for this period.</td></tr>";
+        return;
+    }
+
+    myLogs.forEach(lg => {
+        tableBody.innerHTML += `
+            <tr>
+                <td>${lg.date}</td>
+                <td>${lg.checkIn}</td>
+                <td>${lg.checkOut || "--"}</td>
+                <td><span class="badge badge-success">Present</span></td>
+            </tr>
+        `;
+    });
+}
+
+function renderEmployeeTaskList() {
+    const sidebarList = document.getElementById("employee-tasks-sidebar-list");
+    if (!sidebarList) return;
+
+    const empTasks = state.tickets.filter(tk => tk.technicianId === state.user.id && tk.status !== "completed");
+    const empProjects = state.elevators.filter(el => el.progress < 100);
+
+    sidebarList.innerHTML = "";
+
+    // Clear detail pane by default
+    document.getElementById("employee-task-details-pane").innerHTML = `
+        <div class="no-task-selected">
+            <svg viewBox="0 0 24 24" width="48" height="48" stroke="var(--text-muted)" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <p>Select an assigned task from the left list to update progress or complete reports.</p>
+        </div>
+    `;
+
+    if (empTasks.length === 0 && empProjects.length === 0) {
+        sidebarList.innerHTML = "<p class='text-muted text-center'>No active tasks.</p>";
+        return;
+    }
+
+    // Render tickets
+    empTasks.forEach(tk => {
+        let cardClass = tk.category.includes("SOS") ? "task-mini-card border-danger bg-dark-danger" : "task-mini-card";
+        let badgeColor = tk.category.includes("SOS") ? "badge-danger" : "badge-warning";
+        
+        sidebarList.innerHTML += `
+            <div class="${cardClass}" onclick="selectEmployeeTask('ticket', '${tk.id}', this)">
+                <h4>🔧 Repair: ${tk.elevatorName}</h4>
+                <p>Issue: ${tk.category}</p>
+                <span class="badge ${badgeColor}" style="margin-top:8px;">${tk.category.includes("SOS") ? 'CRITICAL SOS' : 'Open Ticket'}</span>
+            </div>
+        `;
+    });
+
+    // Render installation projects
+    empProjects.forEach(el => {
+        sidebarList.innerHTML += `
+            <div class="task-mini-card" onclick="selectEmployeeTask('project', '${el.id}', this)">
+                <h4>🏗 Install: ${el.buildingName}</h4>
+                <p>Stage: ${el.stages[el.currentStage].name}</p>
+                <span class="badge badge-info" style="margin-top:8px;">Project Install</span>
+            </div>
+        `;
+    });
+}
+
+function selectEmployeeTask(type, id, element) {
+    document.querySelectorAll(".task-mini-card").forEach(el => el.classList.remove("active"));
+    if (element) element.classList.add("active");
+
+    const pane = document.getElementById("employee-task-details-pane");
+    if (!pane) return;
+    
+    if (type === "ticket") {
+        const tk = state.tickets.find(t => t.id === id);
+        pane.innerHTML = `
+            <div class="task-details-header">
+                <h2>🔧 Repair Request: ${tk.elevatorName}</h2>
+                <p>Ticket ID: ${tk.id} | Assigned on ${tk.createdDate}</p>
+            </div>
+            <div class="task-details-body">
+                <div class="info-block">
+                    <h4>Problem Category</h4>
+                    <p class="${tk.category.includes("SOS") ? 'text-danger font-bold' : ''}">${tk.category}</p>
+                </div>
+                <div class="info-block">
+                    <h4>Customer Description</h4>
+                    <p>${tk.description}</p>
+                </div>
+                <div class="action-block">
+                    <h3 class="section-title">Submit Field Resolution Report</h3>
+                    <form onsubmit="submitTaskResolution(event, '${tk.id}')">
+                        <div class="form-group">
+                            <label for="res-note">Action Taken / Resolution Note</label>
+                            <textarea id="res-note" class="form-control" rows="3" placeholder="Explain what was fixed, parts replaced, etc." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Digital Signature of Customer (Draw below)</label>
+                            <div style="background: #050a10; border: 1px solid var(--border-color); border-radius: var(--radius-sm); position: relative; margin-bottom: 8px;">
+                                <canvas id="signature-pad" width="400" height="150" style="width: 100%; height: 150px; display: block; cursor: crosshair;"></canvas>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSignaturePad()" style="position: absolute; bottom: 8px; right: 8px;">Clear</button>
+                            </div>
+                            <input type="hidden" id="res-signature-data" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="res-signature-name">Customer Name</label>
+                            <input type="text" id="res-signature-name" class="form-control" placeholder="Type customer name (e.g. Ramesh Patel)" required>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-full">Close Ticket & Submit Report</button>
+                    </form>
+                </div>
+            </div>
+        `;
+        initSignaturePad();
+    } else if (type === "project") {
+        const el = state.elevators.find(e => e.id === id);
+        const stage = el.stages[el.currentStage];
+        
+        pane.innerHTML = `
+            <div class="task-details-header">
+                <h2>🏗 Installation Project: ${el.buildingName}</h2>
+                <p>Project ID: ${el.id} | Model: ${el.model}</p>
+            </div>
+            <div class="task-details-body">
+                <div class="info-block">
+                    <h4>Current Stage under Installation</h4>
+                    <p><strong>Stage ${el.currentStage + 1}: ${stage.name}</strong></p>
+                    <p class="subtext">Installation Status: In Progress</p>
+                </div>
+                <div class="info-block">
+                    <h4>Site Address</h4>
+                    <p>${el.address}</p>
+                </div>
+                <div class="action-block">
+                    <h3 class="section-title">Update Milestone Completion</h3>
+                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">Confirm that stage <strong>${stage.name}</strong> is completed, and advance this elevator project to the next stage.</p>
+                    <button class="btn btn-primary btn-full" onclick="advanceProjectStage('${el.id}')">Mark Stage Completed & Next Stage</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// -- C. Admin Render Functions
+function renderAdminDashboard() {
+    // Top numbers
+    document.getElementById("admin-stat-total-elevators").textContent = state.elevators.length;
+    document.getElementById("admin-stat-pending-installs").textContent = state.elevators.filter(e => e.progress < 100).length;
+    document.getElementById("admin-stat-open-tickets").textContent = state.tickets.filter(t => t.status !== "completed").length;
+    
+    const todayStr = new Date().toDateString();
+    const presentCount = state.attendance.filter(at => at.date === todayStr).length;
+    document.getElementById("admin-stat-staff-present").textContent = `${presentCount} / ${state.employees.length}`;
+
+    // Projects list with progress bars
+    const projectList = document.getElementById("admin-dashboard-project-list");
+    if (!projectList) return;
+
+    projectList.innerHTML = "";
+    state.elevators.forEach(el => {
+        projectList.innerHTML += `
+            <div style="margin-bottom: 18px;">
+                <div class="progress-info" style="font-size: 0.85rem; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                    <span>${el.buildingName} (${el.model})</span>
+                    <span class="text-primary font-bold">${el.progress}%</span>
+                </div>
+                <div class="progress-bar-bg" style="height: 6px;">
+                    <div class="progress-bar-fill" style="width: ${el.progress}%;"></div>
+                </div>
+            </div>
+        `;
+    });
+
+    // SOS Alerts tracker
+    const sosBox = document.getElementById("admin-sos-tracker-box");
+    if (!sosBox) return;
+
+    const sosAlerts = state.tickets.filter(tk => tk.category === "Emergency Breakdown (SOS)" && tk.status !== "completed");
+    
+    if (sosAlerts.length === 0) {
+        sosBox.innerHTML = `
+            <p class="text-muted text-center" style="padding: 20px 0;">All elevator operations running normally.</p>
+        `;
+    } else {
+        sosBox.innerHTML = "";
+        sosAlerts.forEach(sos => {
+            sosBox.innerHTML += `
+                <div class="sos-ticket-admin">
+                    <h4 class="text-danger" style="margin-bottom:4px; display: flex; align-items:center; gap:8px;">
+                        <span class="status-dot green" style="background: red; box-shadow: 0 0 6px red;"></span>
+                        💥 DANGER: TRAPPED USER SOS
+                    </h4>
+                    <p><strong>Building:</strong> ${sos.elevatorName}</p>
+                    <p><strong>Status:</strong> ${sos.status.toUpperCase()}</p>
+                    <p style="font-size: 0.85rem;"><strong>Assigned Tech:</strong> ${sos.technicianName}</p>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button class="btn btn-primary btn-full btn-sm" onclick="switchTab('admin-tickets')">Go to Dispatches</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+}
+
+function renderAdminProjects() {
+    const tableBody = document.getElementById("admin-projects-table-body");
+    if (!tableBody) return;
+
+    tableBody.innerHTML = "";
+    state.elevators.forEach(el => {
+        let badgeColor = "badge-success";
+        if (el.progress < 100) badgeColor = "badge-warning";
+
+        tableBody.innerHTML += `
+            <tr>
+                <td>
+                    <strong>${el.buildingName}</strong>
+                    <div class="subtext text-muted" style="font-size:0.75rem;">${el.address}</div>
+                </td>
+                <td>${el.model}</td>
+                <td>
+                    <div class="progress-bar-bg" style="width: 100px; height: 6px; display: inline-block; vertical-align: middle; margin-right: 6px;">
+                        <div class="progress-bar-fill" style="width: ${el.progress}%;"></div>
+                    </div>
+                    <span class="badge ${badgeColor}">${el.progress}%</span>
+                </td>
+                <td>${el.progress === 100 ? "Handover Completed" : el.stages[el.currentStage].name}</td>
+                <td>${el.handoverDate}</td>
+                <td>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteProject('${el.id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function renderAdminTickets() {
+    const tableBody = document.getElementById("admin-tickets-table-body");
+    if (!tableBody) return;
+
+    tableBody.innerHTML = "";
+    state.tickets.forEach(tk => {
+        let badgeColor = "badge-info";
+        if (tk.status === "completed") badgeColor = "badge-success";
+        if (tk.status === "assigned") badgeColor = "badge-warning";
+        if (tk.category.includes("SOS") || tk.category.includes("Emergency")) badgeColor = "badge-danger animate-pulse";
+
+        tableBody.innerHTML += `
+            <tr>
+                <td>${tk.id}</td>
+                <td>
+                    <strong>${tk.elevatorName}</strong>
+                    <div class="subtext text-muted" style="font-size:0.75rem;">${tk.category}</div>
+                </td>
+                <td>${tk.description}</td>
+                <td><span class="badge ${badgeColor}">${tk.status}</span></td>
+                <td>${tk.technicianName}</td>
+                <td>
+                    ${tk.status === "pending" ? 
+                      `<button class="btn btn-primary btn-sm" onclick="openAssignTicketModal('${tk.id}')">Assign Tech</button>` : 
+                      `<span class="text-muted" style="font-size: 0.8rem;">Dispatched</span>`
+                    }
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function renderAdminAttendance() {
+    const tableBody = document.getElementById("admin-attendance-table-body");
+    if (!tableBody) return;
+
+    const todayStr = new Date().toDateString();
+    const todayLogs = state.attendance.filter(at => at.date === todayStr);
+
+    tableBody.innerHTML = "";
+    
+    if (todayLogs.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='6' class='text-center text-muted' style='padding:20px 0;'>No employee check-ins logged for today.</td></tr>";
+        return;
+    }
+
+    todayLogs.forEach(lg => {
+        tableBody.innerHTML += `
+            <tr>
+                <td><strong>${lg.employeeName}</strong></td>
+                <td>Technician</td>
+                <td>${lg.checkIn}</td>
+                <td>${lg.checkOut || "--"}</td>
+                <td>${lg.location}</td>
+                <td><span class="badge badge-success">Present</span></td>
+            </tr>
+        `;
+    });
+}
+
+function renderAdminEmployeesList() {
+    const tableBody = document.getElementById("admin-employee-table-body");
+    if (!tableBody) return;
+
+    tableBody.innerHTML = "";
+    state.employees.forEach(emp => {
+        const isSelfOrPrimaryAdmin = emp.id === "EMP-101" || (state.user && state.user.id === emp.id);
+        const actionHtml = isSelfOrPrimaryAdmin 
+            ? `<span class="text-muted" style="font-size: 0.8rem;">Protected</span>`
+            : `<button class="btn btn-outline-danger btn-sm" onclick="deleteEmployee('${emp.id}')">Remove</button>`;
+
+        tableBody.innerHTML += `
+            <tr>
+                <td>${emp.id}</td>
+                <td><strong>${emp.name}</strong></td>
+                <td>${emp.role.toUpperCase()}</td>
+                <td>${emp.phone}</td>
+                <td>
+                    <span class="badge ${emp.status === 'Active' ? 'badge-success' : 'badge-danger'}">
+                        ${emp.status}
+                    </span>
+                </td>
+                <td>
+                    ${actionHtml}
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function renderNotificationsList() {
+    const notiList = document.getElementById("noti-list");
+    const badgeCount = document.getElementById("noti-badge-count");
+    if (!notiList || !badgeCount) return;
+
+    badgeCount.textContent = state.notifications.length;
+    if (state.notifications.length === 0) {
+        badgeCount.classList.add("hidden");
+        notiList.innerHTML = "<p class='text-muted text-center' style='padding:16px;'>No notifications yet.</p>";
+        return;
+    }
+    
+    badgeCount.classList.remove("hidden");
+    notiList.innerHTML = "";
+    state.notifications.forEach(nt => {
+        notiList.innerHTML += `
+            <div class="noti-item">
+                <span>${nt.message}</span>
+                <span class="noti-time">${nt.time}</span>
+            </div>
+        `;
+    });
+}
+
+// Toggle notifications dropdown panel
+function toggleNotifications() {
+    const panel = document.getElementById("noti-panel");
+    if (panel) panel.classList.toggle("hidden");
+}
+
+function clearNotifications(e) {
+    if (e) e.stopPropagation();
+    state.notifications = [];
+    saveStateToStorage("ge_notifications", state.notifications);
+    renderActivePortalViews();
+}
+
+// 7. Action Forms Submission Handling
+
+// -- A. Customer Actions
+function submitServiceRequest(e) {
+    e.preventDefault();
+    const elevatorId = document.getElementById("ticket-elevator").value;
+    const category = document.getElementById("ticket-issue-type").value;
+    const description = document.getElementById("ticket-desc").value;
+    
+    const elevator = state.elevators.find(el => el.id === elevatorId);
+    
+    const newTicket = {
+        id: `TCKT-${Math.floor(100 + Math.random() * 900)}`,
+        elevatorId: elevatorId,
+        elevatorName: elevator ? elevator.buildingName : "Unknown Elevator",
+        category: category,
+        description: description,
+        status: "pending",
+        technicianId: "",
+        technicianName: "Unassigned",
+        createdDate: new Date().toISOString().split('T')[0],
+        resolutionNote: ""
+    };
+
+    state.tickets.push(newTicket);
+    saveStateToStorage("ge_tickets", state.tickets);
+    
+    // Add Notification
+    addNotification(`New support ticket ${newTicket.id} filed for ${newTicket.elevatorName}.`);
+    
+    // Reset Form
+    document.getElementById("service-request-form").reset();
+    
+    // Re-render
+    renderActivePortalViews();
+}
+
+function triggerSOS() {
+    const newSOS = {
+        id: `TCKT-SOS-${Math.floor(100 + Math.random() * 900)}`,
+        elevatorId: "ELEV-001",
+        elevatorName: "Skyline Residency - Block A (TRAPPED SOS)",
+        category: "Emergency Breakdown (SOS)",
+        description: "EMERGENCY: User pressed Trapped Panic SOS Button inside app.",
+        status: "pending",
+        technicianId: "",
+        technicianName: "Unassigned",
+        createdDate: new Date().toISOString().split('T')[0],
+        resolutionNote: ""
+    };
+
+    state.tickets.unshift(newSOS);
+    saveStateToStorage("ge_tickets", state.tickets);
+
+    addNotification(`🚨 CRITICAL EMERGENCY SOS triggered at Skyline Residency - Block A!`);
+    
+    closeEmergencyModal();
+    alert("Emergency SOS Sent! Local technicians and GE administrators have been notified.");
+    renderActivePortalViews();
+}
+
+// -- B. Employee Actions
+function performClockIn() {
+    const todayStr = new Date().toDateString();
+    const timeStr = new Date().toLocaleTimeString();
+    
+    const geoIndicator = document.getElementById("geo-status-indicator");
+    const loc = geoIndicator ? geoIndicator.textContent.replace("GPS Coordinates Secured: ", "").replace("Simulated GPS Location Active: ", "") : "Worli Mumbai";
+
+    const log = {
+        id: `ATT-${Math.floor(1000 + Math.random() * 9000)}`,
+        employeeId: state.user.id,
+        employeeName: state.user.name,
+        date: todayStr,
+        checkIn: timeStr,
+        checkOut: "",
+        location: loc
+    };
+
+    state.attendance.push(log);
+    
+    // Update employee status in database
+    const idx = state.employees.findIndex(em => em.id === state.user.id);
+    if (idx !== -1) {
+        state.employees[idx].status = "Active";
+    }
+    
+    saveStateToStorage("ge_employees", state.employees);
+    saveStateToStorage("ge_attendance", state.attendance);
+
+    addNotification(`${state.user.name} checked in at ${timeStr}.`);
+
+    renderActivePortalViews();
+}
+
+function performClockOut() {
+    const todayStr = new Date().toDateString();
+    const timeStr = new Date().toLocaleTimeString();
+
+    const idxAtt = state.attendance.findIndex(at => at.employeeId === state.user.id && at.date === todayStr && at.checkOut === "");
+    if (idxAtt !== -1) {
+        state.attendance[idxAtt].checkOut = timeStr;
+    }
+
+    const idxEmp = state.employees.findIndex(em => em.id === state.user.id);
+    if (idxEmp !== -1) {
+        state.employees[idxEmp].status = "Inactive";
+    }
+
+    saveStateToStorage("ge_employees", state.employees);
+    saveStateToStorage("ge_attendance", state.attendance);
+
+    addNotification(`${state.user.name} checked out at ${timeStr}.`);
+
+    renderActivePortalViews();
+}
+
+function submitTaskResolution(e, ticketId) {
+    e.preventDefault();
+    const resNote = document.getElementById("res-note").value;
+    const sigData = document.getElementById("res-signature-data").value;
+    const sigName = document.getElementById("res-signature-name").value;
+    
+    if (!sigData) {
+        alert("Please request the customer to sign on the canvas before submitting.");
+        return;
+    }
+
+    const idx = state.tickets.findIndex(tk => tk.id === ticketId);
+    if (idx !== -1) {
+        state.tickets[idx].status = "completed";
+        state.tickets[idx].resolutionNote = resNote;
+        state.tickets[idx].signatureData = sigData;
+        state.tickets[idx].signatureName = sigName;
+        state.tickets[idx].closedDate = new Date().toISOString().split('T')[0];
+    }
+
+    saveStateToStorage("ge_tickets", state.tickets);
+    addNotification(`Service ticket ${ticketId} resolved and signed off by ${sigName}.`);
+    
+    renderActivePortalViews();
+}
+
+function advanceProjectStage(projectId) {
+    const idx = state.elevators.findIndex(el => el.id === projectId);
+    if (idx === -1) return;
+
+    const el = state.elevators[idx];
+    el.stages[el.currentStage].status = "completed";
+    el.stages[el.currentStage].date = new Date().toISOString().split('T')[0];
+
+    if (el.currentStage < el.stages.length - 1) {
+        el.currentStage++;
+        el.stages[el.currentStage].status = "in-progress";
+        el.progress = Math.min(99, Math.round(((el.currentStage) / el.stages.length) * 100));
+        addNotification(`Project ${el.buildingName} advanced to Stage ${el.currentStage + 1}: ${el.stages[el.currentStage].name}.`);
+    } else {
+        el.progress = 100;
+        addNotification(`Project ${el.buildingName} installation completed!`);
+    }
+
+    saveStateToStorage("ge_elevators", state.elevators);
+    renderActivePortalViews();
+}
+
+// -- C. Admin Actions
+function openAssignTicketModal(ticketId) {
+    const modal = document.getElementById("assign-ticket-modal");
+    if (!modal) return;
+
+    document.getElementById("assign-ticket-id").value = ticketId;
+    
+    // Load active technicians in dropdown
+    const select = document.getElementById("assign-select-tech");
+    const techs = state.employees.filter(emp => emp.role === "technician");
+    
+    select.innerHTML = techs.map(tc => `<option value="${tc.id}">${tc.name} (${tc.status})</option>`).join("");
+    
+    modal.classList.remove("hidden");
+}
+
+function closeAssignTicketModal() {
+    const modal = document.getElementById("assign-ticket-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function saveTicketAssignment(e) {
+    e.preventDefault();
+    const ticketId = document.getElementById("assign-ticket-id").value;
+    const techId = document.getElementById("assign-select-tech").value;
+    const tech = state.employees.find(emp => emp.id === techId);
+
+    const idx = state.tickets.findIndex(tk => tk.id === ticketId);
+    if (idx !== -1 && tech) {
+        state.tickets[idx].status = "assigned";
+        state.tickets[idx].technicianId = tech.id;
+        state.tickets[idx].technicianName = tech.name;
+        
+        addNotification(`Ticket ${ticketId} assigned to technician ${tech.name}.`);
+    }
+
+    saveStateToStorage("ge_tickets", state.tickets);
+    closeAssignTicketModal();
+    renderActivePortalViews();
+}
+
+// Projects Management
+function openAddProjectModal() {
+    const modal = document.getElementById("add-project-modal");
+    if (modal) modal.classList.remove("hidden");
+}
+
+function closeAddProjectModal() {
+    const modal = document.getElementById("add-project-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function saveNewProject(e) {
+    e.preventDefault();
+    const name = document.getElementById("proj-client-name").value.trim();
+    const email = document.getElementById("proj-client-email").value.trim().toLowerCase();
+    const address = document.getElementById("proj-address").value.trim();
+    const model = document.getElementById("proj-model").value;
+    const date = document.getElementById("proj-handover").value;
+
+    // Check if client user already exists, if not create one
+    const existingCust = state.employees.find(emp => emp.email && emp.email.toLowerCase() === email);
+    if (!existingCust) {
+        const custUser = {
+            id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
+            name: name,
+            email: email,
+            password: "", // Setup required
+            role: "customer",
+            phone: "+91 9999999999",
+            status: "Active",
+            roleDetail: `Client (${name})`
+        };
+        state.employees.push(custUser);
+        saveStateToStorage("ge_employees", state.employees);
+    }
+
+    const newProj = {
+        id: `ELEV-00${state.elevators.length + 1}`,
+        buildingName: name,
+        clientName: name,
+        clientEmail: email,
+        address: address,
+        model: model,
+        progress: 10,
+        currentStage: 0,
+        handoverDate: date,
+        stages: [
+            { name: "Site Readiness Inspection", status: "in-progress", date: "" },
+            { name: "Shaft Plumb Line Verification", status: "pending", date: "" },
+            { name: "Bracket & Guide Rail Mounting", status: "pending", date: "" },
+            { name: "Landing Door Alignment", status: "pending", date: "" },
+            { name: "Car Frame & Cabin Assembly", status: "pending", date: "" },
+            { name: "Traction Machine & Rope Laying", status: "pending", date: "" },
+            { name: "Electrical Wiring & Control Panel", status: "pending", date: "" },
+            { name: "Safety Gear & Speed Governor Calibration", status: "pending", date: "" },
+            { name: "Final Inspection & Licensing Signoff", status: "pending", date: "" }
+        ]
+    };
+
+    state.elevators.push(newProj);
+    saveStateToStorage("ge_elevators", state.elevators);
+    addNotification(`New project for ${name} registered successfully.`);
+
+    document.getElementById("add-project-form").reset();
+    closeAddProjectModal();
+    renderActivePortalViews();
+}
+
+function deleteProject(projectId) {
+    if (!confirm("Are you sure you want to delete this elevator project and revoke the customer's portal access?")) return;
+    const proj = state.elevators.find(el => el.id === projectId);
+    if (!proj) return;
+    
+    // Delete the elevator project
+    state.elevators = state.elevators.filter(el => el.id !== projectId);
+    saveStateToStorage("ge_elevators", state.elevators);
+
+    // Clean up the associated customer from the user directory
+    state.employees = state.employees.filter(emp => emp.email !== proj.clientEmail);
+    saveStateToStorage("ge_employees", state.employees);
+
+    addNotification(`Deleted project ${proj.buildingName} and associated customer user.`);
+    renderActivePortalViews();
+}
+
+// Staff Management
+function openAddEmployeeModal() {
+    const modal = document.getElementById("add-employee-modal");
+    if (modal) modal.classList.remove("hidden");
+}
+
+function closeAddEmployeeModal() {
+    const modal = document.getElementById("add-employee-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function saveNewEmployee(e) {
+    e.preventDefault();
+    const name = document.getElementById("emp-name").value.trim();
+    const email = document.getElementById("emp-email").value.trim().toLowerCase();
+    const role = document.getElementById("emp-role").value;
+    const phone = document.getElementById("emp-phone").value.trim();
+
+    const existingEmp = state.employees.find(emp => emp.email && emp.email.toLowerCase() === email);
+    if (existingEmp) {
+        alert("A user with this email address already exists.");
+        return;
+    }
+
+    const newEmp = {
+        id: `EMP-${Math.floor(104 + Math.random() * 900)}`,
+        name: name,
+        email: email,
+        password: "", // Setup required
+        role: role,
+        phone: phone,
+        status: "Inactive",
+        roleDetail: role.toUpperCase() === "ADMIN" ? "Operations Admin" : `GE ${role.charAt(0).toUpperCase() + role.slice(1)}`
+    };
+
+    state.employees.push(newEmp);
+    saveStateToStorage("ge_employees", state.employees);
+    addNotification(`Staff member ${name} registered as ${role}.`);
+
+    document.getElementById("add-employee-form").reset();
+    closeAddEmployeeModal();
+    renderActivePortalViews();
+}
+
+function deleteEmployee(empId) {
+    // Prevent deleting primary admin or self
+    if (empId === "EMP-101") {
+        alert("Cannot delete primary system administrator.");
+        return;
+    }
+    if (state.user && state.user.id === empId) {
+        alert("Cannot delete your own active administrator profile.");
+        return;
+    }
+    if (!confirm("Are you sure you want to delete this staff member? This will permanently revoke their access.")) return;
+    const emp = state.employees.find(e => e.id === empId);
+    if (!emp) return;
+
+    state.employees = state.employees.filter(e => e.id !== empId);
+    saveStateToStorage("ge_employees", state.employees);
+
+    addNotification(`Staff member ${emp.name} deleted.`);
+    renderActivePortalViews();
+}
+
+// Emergency Modal Toggles
+function openEmergencyModal() {
+    const modal = document.getElementById("emergency-modal");
+    if (modal) modal.classList.remove("hidden");
+}
+
+function closeEmergencyModal() {
+    const modal = document.getElementById("emergency-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
+// Responsive Sidebar Toggle
+function toggleSidebar() {
+    const sidebar = document.querySelector(".sidebar");
+    if (sidebar) sidebar.classList.toggle("active");
+}
+
+// ==========================================================================
+// 8. Signature Drawing Canvas Engine
+// ==========================================================================
+let signatureDrawing = false;
+let sigCanvas, sigCtx;
+
+function initSignaturePad() {
+    sigCanvas = document.getElementById("signature-pad");
+    if (!sigCanvas) return;
+
+    sigCtx = sigCanvas.getContext("2d");
+    sigCtx.strokeStyle = "#005eb8"; // Gold brush style
+    sigCtx.lineWidth = 3;
+    sigCtx.lineCap = "round";
+
+    // Set canvas dimensions explicitly for drawing precision
+    sigCanvas.width = sigCanvas.offsetWidth;
+    sigCanvas.height = sigCanvas.offsetHeight;
+    
+    // Clear initial state
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+
+    const hiddenInput = document.getElementById("res-signature-data");
+
+    function getCoordinates(e) {
+        const rect = sigCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        return {
+            x: ((clientX - rect.left) / rect.width) * sigCanvas.width,
+            y: ((clientY - rect.top) / rect.height) * sigCanvas.height
+        };
+    }
+
+    function startDrawing(e) {
+        e.preventDefault();
+        signatureDrawing = true;
+        const pos = getCoordinates(e);
+        sigCtx.beginPath();
+        sigCtx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+        if (!signatureDrawing) return;
+        e.preventDefault();
+        const pos = getCoordinates(e);
+        sigCtx.lineTo(pos.x, pos.y);
+        sigCtx.stroke();
+        
+        if (hiddenInput) {
+            hiddenInput.value = sigCanvas.toDataURL(); // Capture base64 PNG
+        }
+    }
+
+    function stopDrawing() {
+        signatureDrawing = false;
+    }
+
+    // Mouse Events
+    sigCanvas.addEventListener("mousedown", startDrawing);
+    sigCanvas.addEventListener("mousemove", draw);
+    sigCanvas.addEventListener("mouseup", stopDrawing);
+    sigCanvas.addEventListener("mouseleave", stopDrawing);
+
+    // Touch Support for Mobiles
+    sigCanvas.addEventListener("touchstart", startDrawing, { passive: false });
+    sigCanvas.addEventListener("touchmove", draw, { passive: false });
+    sigCanvas.addEventListener("touchend", stopDrawing);
+}
+
+function clearSignaturePad() {
+    if (sigCanvas && sigCtx) {
+        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        const hiddenInput = document.getElementById("res-signature-data");
+        if (hiddenInput) hiddenInput.value = "";
+    }
+}
+
+// ==========================================================================
+// 9. Premium Service Report & PDF Invoice Generator
+// ==========================================================================
+function openInvoiceModal(ticketId) {
+    const modal = document.getElementById("invoice-modal");
+    const container = document.getElementById("invoice-modal-body");
+    if (!modal || !container) return;
+
+    const tk = state.tickets.find(t => t.id === ticketId);
+    if (!tk) return;
+
+    // Simulate itemized billing details
+    const isEmergency = tk.category.includes("SOS") || tk.category.includes("Emergency");
+    const baseFee = isEmergency ? 2500 : 800;
+    const partsFee = isEmergency ? 1200 : 0;
+    const taxes = Math.round((baseFee + partsFee) * 0.18); // 18% CGST + SGST
+    const totalAmount = baseFee + partsFee + taxes;
+
+    container.innerHTML = `
+        <div class="invoice-container">
+            <div class="invoice-header">
+                <div class="invoice-logo-title">
+                    <h2>General Electric Elevators</h2>
+                    <p>LIFTCARE PRO</p>
+                    <span style="font-size:0.75rem; color:#4b5563;">Plot No. 12, MIDC Industrial Area, Mumbai, IN</span>
+                </div>
+                <div class="invoice-details-meta">
+                    <strong>Invoice #:</strong> GE-${tk.id}<br/>
+                    <strong>Date Issued:</strong> ${tk.closedDate || tk.createdDate}<br/>
+                    <strong>Status:</strong> <span class="invoice-stamp">${tk.status === 'completed' ? 'PAID' : 'DUE'}</span>
+                </div>
+            </div>
+            
+            <div class="invoice-grid">
+                <div class="invoice-bill-item">
+                    <h4>Customer Billing Details</h4>
+                    <p>
+                        <strong>Name:</strong> ${tk.signatureName || "Skyline Resident Admin"}<br/>
+                        <strong>Location:</strong> ${tk.elevatorName}<br/>
+                        <strong>Ticket Reference:</strong> ${tk.id}
+                    </p>
+                </div>
+                <div class="invoice-bill-item">
+                    <h4>Maintenance Summary</h4>
+                    <p>
+                        <strong>Technician:</strong> ${tk.technicianName}<br/>
+                        <strong>Issue Category:</strong> ${tk.category}<br/>
+                        <strong>Completion Date:</strong> ${tk.closedDate || "--"}
+                    </p>
+                </div>
+            </div>
+
+            <div class="invoice-section-title">Field Service Diagnosis & Action</div>
+            <p style="font-size: 0.85rem; color: #4b5563; line-height: 1.6; margin-bottom: 24px;">
+                ${tk.resolutionNote || "System recalibration completed. Door safety interlock and guide rails inspected."}
+            </p>
+
+            <div class="invoice-section-title">Itemized Charges</div>
+            <table class="invoice-billing-table">
+                <thead>
+                    <tr>
+                        <th>Description of Service / Part</th>
+                        <th>Rate (INR)</th>
+                        <th>Qty</th>
+                        <th>Amount (INR)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <strong>Standard Calibration & Repair Visit</strong>
+                            <div style="font-size:0.75rem; color:#6b7280;">Includes elevator control panel diagnostic checkout</div>
+                        </td>
+                        <td>₹${baseFee}</td>
+                        <td>1</td>
+                        <td>₹${baseFee}</td>
+                    </tr>
+                    ${partsFee > 0 ? `
+                    <tr>
+                        <td>
+                            <strong>Emergency Safety Gear Sensor Replacement</strong>
+                            <div style="font-size:0.75rem; color:#6b7280;">Refit electrical limit switch relays</div>
+                        </td>
+                        <td>₹${partsFee}</td>
+                        <td>1</td>
+                        <td>₹${partsFee}</td>
+                    </tr>` : ""}
+                    <tr>
+                        <td colspan="3" style="text-align: right; font-weight:600;">Subtotal</td>
+                        <td>₹${baseFee + partsFee}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" style="text-align: right; font-weight:600;">GST (18%)</td>
+                        <td>₹${taxes}</td>
+                    </tr>
+                    <tr class="invoice-total-row">
+                        <td colspan="3" style="text-align: right;">Total Amount Due</td>
+                        <td>₹${totalAmount}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="invoice-signature-section">
+                <div class="invoice-sign-box">
+                    <div class="invoice-sign-line">
+                        <div style="border: 1px solid #10b981; color: #10b981; padding: 2px 8px; font-size:0.65rem; border-radius:3px; font-weight:bold;">DIGITALLY VERIFIED</div>
+                    </div>
+                    <span>GE Supervisor Signoff</span>
+                </div>
+                <div class="invoice-sign-box">
+                    <div class="invoice-sign-line">
+                        ${tk.signatureData ? `<img src="${tk.signatureData}" alt="Customer Signature" />` : `<span style="color:#d1d5db; font-size:0.75rem;">No signature captured</span>`}
+                    </div>
+                    <span>Client Authorization Sign</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modal.classList.remove("hidden");
+}
+
+function closeInvoiceModal() {
+    const modal = document.getElementById("invoice-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function printInvoice() {
+    window.print();
+}
+
+// ==========================================================================
+// 10. Admin Tickets Extension for Invoices & Realtime Sync
+// ==========================================================================
+// Hook a listener to real-time local storage sync between browser tabs
+window.addEventListener("storage", function(e) {
+    if (e.key && e.key.startsWith("ge_")) {
+        loadStateFromStorage();
+        renderActivePortalViews();
+    }
+});
+
+// Update renderAdminTickets to add report view
+const originalRenderAdminTickets = renderAdminTickets;
+renderAdminTickets = function() {
+    const tableBody = document.getElementById("admin-tickets-table-body");
+    if (!tableBody) return;
+
+    tableBody.innerHTML = "";
+    state.tickets.forEach(tk => {
+        let badgeColor = "badge-info";
+        if (tk.status === "completed") badgeColor = "badge-success";
+        if (tk.status === "assigned") badgeColor = "badge-warning";
+        if (tk.category.includes("SOS") || tk.category.includes("Emergency")) badgeColor = "badge-danger animate-pulse";
+
+        tableBody.innerHTML += `
+            <tr>
+                <td>${tk.id}</td>
+                <td>
+                    <strong>${tk.elevatorName}</strong>
+                    <div class="subtext text-muted" style="font-size:0.75rem;">${tk.category}</div>
+                </td>
+                <td>${tk.description}</td>
+                <td><span class="badge ${badgeColor}">${tk.status}</span></td>
+                <td>${tk.technicianName}</td>
+                <td>
+                    <div style="display:flex; gap:8px;">
+                        ${tk.status === "pending" ? 
+                          `<button class="btn btn-primary btn-sm" onclick="openAssignTicketModal('${tk.id}')">Assign Tech</button>` : 
+                          `<span class="text-muted" style="font-size: 0.8rem; display:inline-block; align-self:center; margin-right:8px;">Dispatched</span>`
+                        }
+                        ${tk.status === "completed" ? 
+                          `<button class="btn btn-outline-gold btn-sm" onclick="openInvoiceModal('${tk.id}')">View Invoice</button>` : ""
+                        }
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+};
+
