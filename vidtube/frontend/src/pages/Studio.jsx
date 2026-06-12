@@ -40,7 +40,8 @@ export default function Studio() {
     form.append('thumbnail', uploadData.thumbnail);
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/videos', {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBase}/api/v1/videos`, {
         method: 'POST',
         body: form,
         credentials: 'include', // Send the HttpOnly JWT cookies to authenticate

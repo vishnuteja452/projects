@@ -32,7 +32,8 @@ export default function Auth() {
     try {
       if (isLogin) {
         // Login Flow
-        const response = await fetch('http://localhost:8000/api/users/login', {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiBase}/api/users/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -57,7 +58,8 @@ export default function Auth() {
         if (formData.avatar) form.append('avatar', formData.avatar);
         if (formData.coverImage) form.append('coverImage', formData.coverImage);
 
-        const response = await fetch('http://localhost:8000/api/users/register', {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiBase}/api/users/register`, {
           method: 'POST',
           body: form
         });
