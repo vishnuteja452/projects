@@ -1,8 +1,7 @@
 import "dotenv/config";
-import connectDB from "../src/db/index.js";
-import { app } from "../src/app.js";
+import connectDB from "./src/db/index.js";
+import { app } from "./src/app.js";
 
-// Connect MongoDB once per serverless container
 let isConnected = false;
 const connectDbIfNeeded = async () => {
   if (isConnected) return;
