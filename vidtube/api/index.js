@@ -1,8 +1,8 @@
 import "dotenv/config";
-import connectDB from "./src/db/index.js";
-import { app } from "./src/app.js";
+import connectDB from "../src/db/index.js";
+import { app } from "../src/app.js";
 
-// Connect MongoDB once per lambda execution container
+// Connect MongoDB once per serverless container
 let isConnected = false;
 const connectDbIfNeeded = async () => {
   if (isConnected) return;
@@ -13,10 +13,9 @@ const connectDbIfNeeded = async () => {
 export default async function handler(req, res) {
   try {
     await connectDbIfNeeded();
-    // Forward the request to the Express application
     return app(req, res);
   } catch (error) {
-    console.error("Database connection failed in serverless context:", error);
+    console.error("Database connection failed:", error);
     res.status(500).json({ error: "Database connection failed" });
   }
 }
