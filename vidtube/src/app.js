@@ -49,4 +49,9 @@ app.use(express.static(path.join(__dirname, "../frontend/dist")));
 // api error handler route
 app.use(errorhandler);
 
+// Any other route should serve the React app index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+});
+
 export {app}
