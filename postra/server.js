@@ -17,13 +17,28 @@ app.use(express.json());
 app.use(passport.initialize());
 app.use(express.static(path.join(__dirname)));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
+// MongoDB Connection (lazy for serverless)
+let isConnected = false;
+const connectDbIfNeeded = async () => {
+    if (isConnected) return;
+    await mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    });
+    console.log('MongoDB connected successfully');
+    isConnected = true;
+};
+
+// Ensure DB is connected before any request
+app.use(async (req, res, next) => {
+    try {
+        await connectDbIfNeeded();
+        next();
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+        res.status(500).json({ error: 'Database connection failed' });
+    }
+});
 
 // Route Definitions
 const authRoutes = require('./server/routes/authRoutes');
@@ -68,8 +83,12 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Server Listen
-app.listen(PORT, () => {
-    console.log(`POSTRA (Participation Oriented Structured Threaded Response Application) running at http://localhost:${PORT}`);
-    console.log('Premium community platform and Access-Controlled participation active.');
-});
+// Only listen when running locally (not on Vercel)
+if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`POSTRA (Participation Oriented Structured Threaded Response Application) running at http://localhost:${PORT}`);
+        console.log('Premium community platform and Access-Controlled participation active.');
+    });
+}
+
+module.exports = app;
