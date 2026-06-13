@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Connect MongoDB once per serverless container
 let isConnected = false;
 const connectDbIfNeeded = async () => {
   if (isConnected) return;
