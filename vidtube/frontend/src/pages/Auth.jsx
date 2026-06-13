@@ -32,7 +32,7 @@ export default function Auth() {
     try {
       if (isLogin) {
         // Login Flow
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
         const response = await fetch(`${apiBase}/api/users/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -58,7 +58,7 @@ export default function Auth() {
         if (formData.avatar) form.append('avatar', formData.avatar);
         if (formData.coverImage) form.append('coverImage', formData.coverImage);
 
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
         const response = await fetch(`${apiBase}/api/users/register`, {
           method: 'POST',
           body: form

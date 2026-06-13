@@ -1,7 +1,7 @@
 {
-  "name": "youtube_proto",
+  "name": "vidtube",
   "version": "1.0.0",
-  "description": "this is heavily inspired by the youtube ",
+  "description": "VidTube Platform",
   "keywords": [
     "nodejs",
     "mongoose",
@@ -15,7 +15,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "vercel-build": "cd frontend && npm install && npm run build"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

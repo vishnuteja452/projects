@@ -40,7 +40,7 @@ export default function Studio() {
     form.append('thumbnail', uploadData.thumbnail);
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
       const response = await fetch(`${apiBase}/api/v1/videos`, {
         method: 'POST',
         body: form,
