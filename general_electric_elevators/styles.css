@@ -1182,6 +1182,7 @@ a:hover {
     font-size: 0.9rem;
     outline: none;
     transition: var(--transition-smooth);
+    color-scheme: dark; /* Fixes native HTML date picker icon visibility in dark mode */
 }
 
 .form-control:focus {
