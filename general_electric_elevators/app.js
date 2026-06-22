@@ -614,7 +614,17 @@ function renderCustomerInstallationProgress() {
     }
 
     document.getElementById("cust-track-building-name").textContent = project.buildingName;
-    document.getElementById("cust-track-handover-date").textContent = new Date(project.handoverDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+    let formattedHandoverDate = "--";
+    if (project.handoverDate) {
+        const d = new Date(project.handoverDate);
+        if (!isNaN(d.getTime())) {
+            // Fix timezone shift by using UTC components
+            formattedHandoverDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+        } else {
+            formattedHandoverDate = project.handoverDate;
+        }
+    }
+    document.getElementById("cust-track-handover-date").textContent = formattedHandoverDate;
     document.getElementById("cust-track-percentage").textContent = `${project.progress}%`;
     document.getElementById("cust-track-bar").style.width = `${project.progress}%`;
 
@@ -1028,7 +1038,7 @@ function renderAdminProjects() {
                     <span class="badge ${badgeColor}">${el.progress}%</span>
                 </td>
                 <td>${el.progress === 100 ? "Handover Completed" : el.stages[el.currentStage].name}</td>
-                <td>${el.handoverDate}</td>
+                <td>${el.handoverDate ? new Date(new Date(el.handoverDate).getTime() + new Date(el.handoverDate).getTimezoneOffset() * 60000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "--"}</td>
                 <td>
                     <button class="btn btn-outline-danger btn-sm" onclick="deleteProject('${el.id}')">Delete</button>
                 </td>
