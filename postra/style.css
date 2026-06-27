@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hardcoded Dark Theme directly on :root so it never defaults to white */
 @layer base {
   :root {
     /* Deep space dark background */
@@ -11,12 +12,7 @@
     --muted: 148 163 184;
     --border: 30 41 59;
     
-    /* Vibrant Electric Accents */
-    --primary: 99 102 241; /* Indigo */
-    --primary-foreground: 255 255 255;
-    --accent: 30 41 59;
-    --accent-foreground: 248 250 252;
-    --ring: 99 102 241;
+    /* We won't use a single primary color, we'll use Tailwind utilities directly for varied colors */
     --radius: 0.75rem;
   }
 }
@@ -26,9 +22,8 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-indigo-500/30;
+    @apply bg-background text-foreground antialiased selection:bg-fuchsia-500/30;
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* Dark mode force */
     background-color: rgb(var(--background));
     color: rgb(var(--foreground));
   }
@@ -45,39 +40,26 @@
 
 @layer components {
   .premium-card {
-    @apply bg-surface/80 backdrop-blur-xl border border-border rounded-[var(--radius)] shadow-lg transition-all duration-300 hover:shadow-indigo-500/10 hover:border-indigo-500/30;
+    @apply bg-surface/80 backdrop-blur-xl border border-border rounded-[var(--radius)] shadow-lg transition-all duration-300;
   }
   
   .glass-panel {
     @apply bg-surface/60 backdrop-blur-xl border-b border-border/50;
   }
-  
-  .btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:pointer-events-none disabled:opacity-50 text-white h-10 px-5 py-2 shadow-lg shadow-indigo-500/25 active:scale-95;
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  }
-  .btn-primary:hover {
-    background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
-  }
-  
-  .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:pointer-events-none disabled:opacity-50 border border-border/80 bg-surface/50 hover:bg-surface hover:text-white hover:border-indigo-500/50 h-10 px-5 py-2 active:scale-95;
-  }
 
   .input-field {
-    @apply flex h-10 w-full rounded-lg border border-border bg-background/50 px-4 py-2 text-sm shadow-inner transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted focus-visible:outline-none focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-10 w-full rounded-lg border border-border bg-background/50 px-4 py-2 text-sm shadow-inner transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50;
   }
 }
 
-/* Stunning Mesh Gradient Background Elements */
+/* Stunning Mesh Gradient Background Elements - Multi-colored */
 .mesh-bg-1 {
   position: absolute;
   top: -10%;
   left: -10%;
   width: 50vw;
   height: 50vw;
-  background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(11,14,20,0) 70%);
+  background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, rgba(11,14,20,0) 70%); /* Cyan */
   border-radius: 50%;
   z-index: -1;
   pointer-events: none;
@@ -90,11 +72,24 @@
   right: -10%;
   width: 60vw;
   height: 60vw;
-  background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(11,14,20,0) 70%);
+  background: radial-gradient(circle, rgba(236,72,153,0.12) 0%, rgba(11,14,20,0) 70%); /* Pink */
   border-radius: 50%;
   z-index: -1;
   pointer-events: none;
   filter: blur(100px);
+}
+
+.mesh-bg-3 {
+  position: absolute;
+  top: 30%;
+  right: -20%;
+  width: 40vw;
+  height: 40vw;
+  background: radial-gradient(circle, rgba(245,158,11,0.08) 0%, rgba(11,14,20,0) 70%); /* Amber */
+  border-radius: 50%;
+  z-index: -1;
+  pointer-events: none;
+  filter: blur(90px);
 }
 
 /* Custom Animations */
@@ -114,7 +109,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid #a855f7;
+  border: 2px solid #ec4899; /* Pink */
   animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 

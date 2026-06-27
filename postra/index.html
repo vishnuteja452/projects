@@ -21,17 +21,7 @@
                         ring: "rgba(var(--ring), <alpha-value>)",
                         background: "rgba(var(--background), <alpha-value>)",
                         foreground: "rgba(var(--foreground), <alpha-value>)",
-                        primary: {
-                            DEFAULT: "rgba(var(--primary), <alpha-value>)",
-                            foreground: "rgba(var(--primary-foreground), <alpha-value>)",
-                        },
-                        muted: {
-                            DEFAULT: "rgba(var(--muted), <alpha-value>)",
-                        },
-                        accent: {
-                            DEFAULT: "rgba(var(--accent), <alpha-value>)",
-                            foreground: "rgba(var(--accent-foreground), <alpha-value>)",
-                        },
+                        muted: { DEFAULT: "rgba(var(--muted), <alpha-value>)" },
                         surface: "rgba(var(--surface), <alpha-value>)",
                     }
                 }
@@ -44,19 +34,21 @@
     <!-- Mesh Gradients for background glow -->
     <div class="mesh-bg-1"></div>
     <div class="mesh-bg-2"></div>
+    <div class="mesh-bg-3"></div>
 
     <!-- Top Navigation -->
     <header class="fixed top-0 w-full h-16 glass-panel z-50 px-6 flex items-center justify-between">
         <div class="flex items-center gap-3 cursor-pointer group" id="logo-home">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all group-hover:scale-105">
+            <!-- Cyan to Blue Logo -->
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold shadow-[0_0_20px_rgba(14,165,233,0.4)] transition-all group-hover:scale-105">
                 <i class="fa-solid fa-bolt"></i>
             </div>
             <span class="font-bold text-xl tracking-tight text-white">Postra</span>
         </div>
         
         <div class="flex-1 max-w-lg mx-8 hidden md:block">
-            <div class="relative bg-black/20 h-10 rounded-xl px-4 flex items-center gap-2 border border-white/5 focus-within:border-indigo-500/50 focus-within:bg-black/40 transition-all shadow-inner group">
-                <i class="fa-solid fa-magnifying-glass text-muted group-focus-within:text-indigo-400 transition-colors"></i>
+            <div class="relative bg-black/20 h-10 rounded-xl px-4 flex items-center gap-2 border border-white/5 focus-within:border-cyan-500/50 focus-within:bg-black/40 transition-all shadow-inner group">
+                <i class="fa-solid fa-magnifying-glass text-muted group-focus-within:text-cyan-400 transition-colors"></i>
                 <input type="text" id="global-search" placeholder="Search across Postra..." class="bg-transparent border-none outline-none text-white text-sm w-full placeholder:text-muted/50 focus:ring-0">
                 <div class="hidden lg:flex items-center gap-1">
                     <kbd class="pointer-events-none inline-flex h-6 select-none items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 font-mono text-[10px] font-medium text-muted"><span>⌘</span>K</kbd>
@@ -65,8 +57,8 @@
         </div>
 
         <div class="flex items-center gap-3" id="auth-controls">
-            <button class="btn-secondary text-xs" id="open-login">Sign In</button>
-            <button class="btn-primary text-xs" id="open-register">Get Started</button>
+            <button class="inline-flex items-center justify-center rounded-lg text-sm font-bold border border-border/80 bg-surface/50 hover:bg-surface hover:text-white hover:border-cyan-500/50 h-9 px-4 transition-all text-xs" id="open-login">Sign In</button>
+            <button class="inline-flex items-center justify-center rounded-lg text-sm font-bold bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-[0_4px_15px_rgba(14,165,233,0.3)] hover:shadow-[0_4px_25px_rgba(14,165,233,0.5)] h-9 px-4 transition-all active:scale-95 text-xs" id="open-register">Get Started</button>
         </div>
     </header>
 
@@ -76,12 +68,14 @@
         <!-- Sidebar Navigation -->
         <aside class="hidden md:flex flex-col sticky top-16 h-[calc(100vh-64px)] border-r border-border/30 px-5 py-8 overflow-y-auto bg-background/20 backdrop-blur-sm">
             <div class="mb-10">
-                <h4 class="px-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4 opacity-80">Discover</h4>
+                <h4 class="px-2 text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-4 opacity-80">Discover</h4>
                 <ul class="space-y-1.5">
-                    <li class="nav-item bg-indigo-500/10 text-indigo-300 rounded-lg border border-indigo-500/20 transition-colors" id="feed-home">
+                    <!-- Active element gets cyan accent -->
+                    <li class="nav-item bg-cyan-500/10 text-cyan-300 rounded-lg border border-cyan-500/20 transition-colors" id="feed-home">
                         <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm font-semibold"><i class="fa-solid fa-house w-4 text-center"></i> Home</a>
                     </li>
-                    <li class="nav-item hover:bg-white/5 text-muted hover:text-foreground rounded-lg transition-colors" id="feed-popular">
+                    <!-- Hover elements get amber accent -->
+                    <li class="nav-item hover:bg-amber-500/10 hover:border-amber-500/20 text-muted hover:text-amber-300 rounded-lg border border-transparent transition-colors" id="feed-popular">
                         <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm font-medium"><i class="fa-solid fa-fire w-4 text-center"></i> Popular</a>
                     </li>
                     <li class="nav-item hover:bg-white/5 text-muted hover:text-foreground rounded-lg transition-colors" id="feed-all">
@@ -94,14 +88,14 @@
             </div>
             
             <div id="joined-boards-section" class="mb-10 hidden">
-                <h4 class="px-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4 opacity-80">Your Communities</h4>
+                <h4 class="px-2 text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-4 opacity-80">Your Communities</h4>
                 <ul class="space-y-1.5" id="sidebar-joined-boards">
                     <!-- Dynamic rendering -->
                 </ul>
             </div>
 
             <div>
-                <h4 class="px-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4 opacity-80">Explore Boards</h4>
+                <h4 class="px-2 text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-4 opacity-80">Explore Boards</h4>
                 <ul class="space-y-1.5" id="sidebar-boards">
                     <!-- Dynamic rendering -->
                 </ul>
@@ -112,19 +106,19 @@
         <main class="py-10 px-4 sm:px-8 lg:px-12 overflow-y-auto" id="main-content">
             <div id="feed-container" class="max-w-2xl mx-auto relative">
                 
-                <!-- Create Post Input (Premium Card) -->
-                <div class="premium-card p-4 mb-10 flex items-center gap-3 cursor-pointer group" onclick="PostraApp.showCreatePostModal()">
-                    <div class="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-muted group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors border border-transparent group-hover:border-indigo-500/30">
+                <!-- Create Post Input (Amber Accent) -->
+                <div class="premium-card p-4 mb-10 flex items-center gap-3 cursor-pointer group hover:border-amber-500/30 hover:shadow-[0_4px_20px_rgba(245,158,11,0.1)]" onclick="PostraApp.showCreatePostModal()">
+                    <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-muted group-hover:bg-amber-500/20 group-hover:text-amber-400 transition-colors border border-transparent group-hover:border-amber-500/30">
                         <i class="fa-solid fa-plus text-sm"></i>
                     </div>
                     <div class="flex-1 px-3 text-sm text-muted/60 font-medium group-hover:text-white/80 transition-colors">
                         Share something with the community...
                     </div>
                     <div class="flex gap-2">
-                        <button class="w-10 h-10 flex items-center justify-center text-muted hover:bg-accent rounded-lg transition-colors">
+                        <button class="w-10 h-10 flex items-center justify-center text-muted hover:bg-white/10 hover:text-amber-400 rounded-lg transition-colors">
                             <i class="fa-solid fa-image"></i>
                         </button>
-                        <button class="w-10 h-10 flex items-center justify-center text-muted hover:bg-accent rounded-lg transition-colors">
+                        <button class="w-10 h-10 flex items-center justify-center text-muted hover:bg-white/10 hover:text-amber-400 rounded-lg transition-colors">
                             <i class="fa-solid fa-link"></i>
                         </button>
                     </div>
@@ -132,8 +126,8 @@
 
                 <div id="thread-list" class="space-y-6 pb-24">
                     <div class="flex flex-col items-center justify-center py-32 text-muted" id="loader">
-                        <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-                        <p class="text-sm font-medium tracking-widest uppercase text-indigo-400/80">Syncing Feed...</p>
+                        <div class="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                        <p class="text-sm font-medium tracking-widest uppercase text-cyan-400/80">Syncing Feed...</p>
                     </div>
                 </div>
             </div>
@@ -142,18 +136,20 @@
         <!-- Right Sidebar (Widgets) -->
         <aside class="hidden lg:flex flex-col py-10 px-6 overflow-y-auto h-[calc(100vh-64px)] sticky top-16 border-l border-border/30 bg-background/20 backdrop-blur-sm">
             
-            <div class="premium-card p-6 mb-8 relative overflow-hidden group border-indigo-500/20 bg-gradient-to-b from-indigo-500/5 to-transparent">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                <h3 class="text-sm font-bold mb-3 flex items-center gap-2 text-white"><i class="fa-solid fa-rocket text-indigo-400"></i> Welcome to Postra</h3>
+            <!-- Pink to Violet Welcome Card -->
+            <div class="premium-card p-6 mb-8 relative overflow-hidden group border-pink-500/20 bg-gradient-to-b from-pink-500/5 to-transparent hover:shadow-[0_8px_30px_rgba(236,72,153,0.15)] hover:border-pink-500/40">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
+                <h3 class="text-sm font-bold mb-3 flex items-center gap-2 text-white"><i class="fa-solid fa-rocket text-pink-400"></i> Welcome to Postra</h3>
                 <p class="text-xs text-muted mb-5 leading-relaxed">A high-performance community platform. Share knowledge, discuss architecture, and build products.</p>
                 <div class="space-y-3">
-                    <button class="btn-primary w-full text-xs" id="open-create-post">Create New Post</button>
-                    <button class="btn-secondary w-full text-xs" id="open-create-comm">Create Community</button>
+                    <button class="inline-flex w-full items-center justify-center rounded-lg text-xs font-bold transition-all bg-gradient-to-tr from-pink-500 to-violet-600 text-white shadow-[0_4px_15px_rgba(236,72,153,0.3)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.5)] h-10 px-4 active:scale-95" id="open-create-post">Create New Post</button>
+                    <button class="inline-flex w-full items-center justify-center rounded-lg text-xs font-bold transition-all border border-border/80 bg-surface/50 hover:bg-surface hover:text-white hover:border-pink-500/50 h-10 px-4 active:scale-95" id="open-create-comm">Create Community</button>
                 </div>
             </div>
 
-            <div class="premium-card p-6 mb-8">
-                <h3 class="text-[11px] font-bold text-indigo-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+            <!-- Purple Trending Card -->
+            <div class="premium-card p-6 mb-8 hover:border-purple-500/30 hover:shadow-[0_8px_30px_rgba(168,85,247,0.1)]">
+                <h3 class="text-[11px] font-bold text-purple-400 uppercase tracking-widest mb-5 flex items-center gap-2">
                     <i class="fa-solid fa-chart-line"></i> Trending Now
                 </h3>
                 <div id="trending-widget-list" class="space-y-5">
@@ -161,8 +157,9 @@
                 </div>
             </div>
 
-            <div class="premium-card p-6">
-                <h3 class="text-[11px] font-bold text-indigo-400 uppercase tracking-widest mb-5">Network Status</h3>
+            <!-- Emerald Stats Card -->
+            <div class="premium-card p-6 hover:border-emerald-500/30 hover:shadow-[0_8px_30px_rgba(16,185,129,0.1)]">
+                <h3 class="text-[11px] font-bold text-emerald-400 uppercase tracking-widest mb-5">Network Status</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner">
                         <div class="flex items-center gap-2 mb-2">
@@ -183,14 +180,14 @@
         </aside>
     </div>
 
-    <!-- AI Voice Assistant Trigger (Vapi) -->
+    <!-- AI Voice Assistant Trigger (Fuchsia/Pink Gradient) -->
     <div class="fixed bottom-10 right-10 z-50 group">
         <div class="relative">
             <!-- Pulsing background rings -->
-            <div class="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" style="animation-duration: 3s;"></div>
-            <div class="absolute -inset-2 rounded-full border border-purple-500/30 animate-pulse"></div>
+            <div class="absolute inset-0 rounded-full bg-fuchsia-500/20 animate-ping" style="animation-duration: 3s;"></div>
+            <div class="absolute -inset-2 rounded-full border border-fuchsia-500/30 animate-pulse"></div>
             
-            <button class="relative flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full text-white shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all hover:scale-110 active:scale-95 border border-white/10" id="voice-trigger">
+            <button class="relative flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-pink-500 to-fuchsia-600 rounded-full text-white shadow-[0_0_30px_rgba(217,70,239,0.4)] transition-all hover:scale-110 active:scale-95 border border-white/10" id="voice-trigger">
                 <i class="fa-solid fa-sparkles text-2xl drop-shadow-md"></i>
             </button>
         </div>
@@ -208,7 +205,7 @@
         <!-- Header -->
         <div class="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-black/20">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg border border-white/10">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-fuchsia-600 flex items-center justify-center shadow-lg border border-white/10">
                     <i class="fa-solid fa-robot text-white text-sm"></i>
                 </div>
                 <div>
@@ -224,7 +221,7 @@
         <!-- Output Area -->
         <div id="voice-output" class="p-6 max-h-[350px] overflow-y-auto text-sm space-y-5">
             <div class="flex gap-4">
-                <div class="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex-shrink-0 flex items-center justify-center mt-1"><i class="fa-solid fa-robot text-xs text-indigo-400"></i></div>
+                <div class="w-8 h-8 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/20 flex-shrink-0 flex items-center justify-center mt-1"><i class="fa-solid fa-robot text-xs text-fuchsia-400"></i></div>
                 <p class="bg-black/30 p-4 rounded-2xl rounded-tl-sm text-white/90 border border-white/5 leading-relaxed shadow-inner">Hello! I am your Postra Assistant. How can I help you navigate the platform today?</p>
             </div>
         </div>
@@ -232,8 +229,8 @@
         <!-- Input Area -->
         <div class="p-5 border-t border-white/5 bg-black/40">
             <div class="relative flex items-center">
-                <input type="text" id="assistant-input" placeholder="Ask Postra..." class="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-5 pr-14 text-sm text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 shadow-inner transition-all placeholder:text-muted/50">
-                <button id="send-to-ai" class="absolute right-2 w-10 h-10 rounded-lg bg-indigo-500 text-white flex items-center justify-center hover:bg-indigo-400 transition-colors shadow-lg disabled:opacity-50 border border-white/10">
+                <input type="text" id="assistant-input" placeholder="Ask Postra..." class="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-5 pr-14 text-sm text-white focus:outline-none focus:border-fuchsia-500/50 focus:ring-1 focus:ring-fuchsia-500/50 shadow-inner transition-all placeholder:text-muted/50">
+                <button id="send-to-ai" class="absolute right-2 w-10 h-10 rounded-lg bg-fuchsia-500 text-white flex items-center justify-center hover:bg-fuchsia-400 transition-colors shadow-lg disabled:opacity-50 border border-white/10">
                     <i class="fa-solid fa-arrow-up text-sm"></i>
                 </button>
             </div>
