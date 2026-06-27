@@ -1,62 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Postra | Linear-Inspired Community</title>
+    <title>Postra | Professional Dark Community</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Cache buster ?v=3 to force load the dark theme -->
-    <link rel="stylesheet" href="style.css?v=3">
+    
+    <!-- Nuclear Option: Forcing Tailwind configuration with exact HEX codes to completely bypass any caching issues with CSS variables -->
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        border: "rgba(var(--border), <alpha-value>)",
-                        input: "rgba(var(--border), <alpha-value>)",
-                        background: "rgba(var(--background), <alpha-value>)",
-                        foreground: "rgba(var(--foreground), <alpha-value>)",
-                        muted: { DEFAULT: "rgba(var(--muted), <alpha-value>)" },
-                        surface: "rgba(var(--surface), <alpha-value>)",
+                        /* Professional Dark Color Grading (Linear/Vercel inspired) */
+                        background: "#08090A", /* True Dark */
+                        surface: "#121316",   /* Slightly lighter for cards */
+                        border: "#2A2C32",    /* Subtle borders */
+                        foreground: "#F2F2F2", /* Off-white text */
+                        muted: "#8A8F98",     /* Muted text */
+                        primary: "#5E6AD2",   /* Professional Indigo Accent */
+                        accent: "#1A1D24",    /* Hover states */
                     }
                 }
             }
         }
     </script>
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
-<body class="font-sans antialiased text-foreground bg-background relative overflow-x-hidden min-h-screen selection:bg-white/20 selection:text-white">
+<body class="font-sans antialiased bg-background text-foreground relative overflow-x-hidden min-h-screen selection:bg-primary/30 selection:text-white" style="background-color: #08090A; color: #F2F2F2;">
     
-    <!-- Linear Subtle Glow -->
-    <div class="linear-glow"></div>
+    <!-- Subtle Professional Color Grading (Top Glow) -->
+    <div class="fixed top-0 inset-x-0 h-[500px] bg-gradient-to-b from-primary/10 to-transparent pointer-events-none z-0"></div>
+    <div class="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-primary/5 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
-    <!-- Top Navigation (Minimalist) -->
-    <header class="fixed top-0 w-full h-14 glass-panel z-50 px-6 flex items-center justify-between border-b border-white/[0.08]">
+    <!-- Top Navigation -->
+    <header class="fixed top-0 w-full h-14 bg-background/80 backdrop-blur-xl z-50 px-6 flex items-center justify-between border-b border-border">
         <div class="flex items-center gap-3 cursor-pointer group" id="logo-home">
-            <!-- Custom Sleek SVG Logo -->
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-hover:opacity-80 transition-opacity">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM8.5 16.5L11 7.5L16.5 7.5L14 16.5H8.5Z" fill="white"/>
-            </svg>
+            <!-- Sleek SVG Logo -->
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#5E6AD2] to-[#8A2BE2] flex items-center justify-center shadow-[0_0_15px_rgba(94,106,210,0.3)]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM8.5 16.5L11 7.5L16.5 7.5L14 16.5H8.5Z" fill="white"/>
+                </svg>
+            </div>
             <span class="font-semibold text-[15px] tracking-tight text-white">Postra</span>
         </div>
         
         <div class="flex-1 max-w-md mx-8 hidden md:block">
-            <div class="relative h-8 rounded-md px-3 flex items-center gap-2 border border-white/[0.1] bg-white/[0.03] focus-within:border-white/[0.2] focus-within:bg-white/[0.05] transition-all group">
+            <div class="relative h-8 rounded-md px-3 flex items-center gap-2 border border-border bg-accent focus-within:border-primary/50 focus-within:bg-surface transition-all group shadow-inner">
                 <i class="fa-solid fa-magnifying-glass text-muted text-xs"></i>
                 <input type="text" id="global-search" placeholder="Search issues, boards, people..." class="bg-transparent border-none outline-none text-white text-[13px] w-full placeholder:text-muted focus:ring-0">
                 <div class="hidden lg:flex items-center gap-1">
-                    <kbd class="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-muted">⌘K</kbd>
+                    <kbd class="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-surface px-1.5 font-mono text-[10px] text-muted">⌘K</kbd>
                 </div>
             </div>
         </div>
 
         <div class="flex items-center gap-3" id="auth-controls">
-            <button class="btn-secondary text-[13px]" id="open-login">Log in</button>
-            <button class="btn-primary text-[13px]" id="open-register">Sign up</button>
+            <button class="inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-all border border-border bg-transparent hover:bg-accent text-foreground h-8 px-4" id="open-login">Log in</button>
+            <button class="inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-all bg-white text-black hover:bg-gray-200 h-8 px-4" id="open-register">Sign up</button>
         </div>
     </header>
 
@@ -64,20 +71,19 @@
     <div class="grid grid-cols-1 md:grid-cols-[220px_1fr] lg:grid-cols-[220px_1fr_280px] max-w-[1440px] mx-auto mt-14 h-[calc(100vh-56px)] relative z-10">
         
         <!-- Sidebar Navigation -->
-        <aside class="hidden md:flex flex-col sticky top-14 h-[calc(100vh-56px)] border-r border-white/[0.08] px-4 py-6 overflow-y-auto bg-background">
+        <aside class="hidden md:flex flex-col sticky top-14 h-[calc(100vh-56px)] border-r border-border px-4 py-6 overflow-y-auto bg-background/50">
             <div class="mb-8">
                 <ul class="space-y-0.5">
-                    <!-- Minimalist sidebar items -->
-                    <li class="nav-item bg-white/[0.08] text-white rounded-md transition-colors" id="feed-home">
+                    <li class="nav-item bg-accent text-white rounded-md transition-colors" id="feed-home">
                         <a href="#" class="flex items-center gap-3 px-2 py-1.5 text-[13px] font-medium"><i class="fa-solid fa-house w-4 text-center opacity-70 text-xs"></i> Home</a>
                     </li>
-                    <li class="nav-item hover:bg-white/[0.05] text-muted hover:text-white rounded-md transition-colors" id="feed-popular">
+                    <li class="nav-item hover:bg-accent text-muted hover:text-white rounded-md transition-colors" id="feed-popular">
                         <a href="#" class="flex items-center gap-3 px-2 py-1.5 text-[13px] font-medium"><i class="fa-solid fa-arrow-trend-up w-4 text-center opacity-70 text-xs"></i> Popular</a>
                     </li>
-                    <li class="nav-item hover:bg-white/[0.05] text-muted hover:text-white rounded-md transition-colors" id="feed-all">
+                    <li class="nav-item hover:bg-accent text-muted hover:text-white rounded-md transition-colors" id="feed-all">
                         <a href="#" class="flex items-center gap-3 px-2 py-1.5 text-[13px] font-medium"><i class="fa-solid fa-layer-group w-4 text-center opacity-70 text-xs"></i> All Activity</a>
                     </li>
-                    <li class="nav-item hover:bg-white/[0.05] text-muted hover:text-white rounded-md transition-colors" id="feed-my-posts">
+                    <li class="nav-item hover:bg-accent text-muted hover:text-white rounded-md transition-colors" id="feed-my-posts">
                         <a href="#" class="flex items-center gap-3 px-2 py-1.5 text-[13px] font-medium"><i class="fa-regular fa-user w-4 text-center opacity-70 text-xs"></i> My Profile</a>
                     </li>
                 </ul>
@@ -105,25 +111,25 @@
         <main class="py-8 px-4 sm:px-8 lg:px-16 overflow-y-auto" id="main-content">
             <div id="feed-container" class="max-w-[700px] mx-auto relative">
                 
-                <!-- Create Post Input (Minimalist) -->
-                <div class="linear-card p-3 mb-8 flex items-center gap-3 cursor-pointer group" onclick="PostraApp.showCreatePostModal()">
+                <!-- Create Post Input -->
+                <div class="bg-surface border border-border hover:border-primary/50 hover:shadow-[0_0_15px_rgba(94,106,210,0.1)] rounded-lg p-3 mb-8 flex items-center gap-3 cursor-pointer group transition-all" onclick="PostraApp.showCreatePostModal()">
                     <div class="flex-1 px-2 text-[13px] text-muted group-hover:text-white/80 transition-colors flex items-center gap-2">
                         <i class="fa-solid fa-pen text-[10px] opacity-50"></i> Create new issue...
                     </div>
-                    <kbd class="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-muted">C</kbd>
+                    <kbd class="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-accent px-1.5 font-mono text-[10px] text-muted">C</kbd>
                 </div>
 
                 <!-- Feed Header -->
-                <div class="flex items-center justify-between mb-4 border-b border-white/[0.08] pb-2">
+                <div class="flex items-center justify-between mb-4 border-b border-border pb-2">
                     <h2 class="text-sm font-medium text-white">Active Discussions</h2>
                     <div class="flex items-center gap-2 text-xs text-muted">
                         <button class="hover:text-white transition-colors"><i class="fa-solid fa-filter"></i> Filter</button>
                     </div>
                 </div>
 
-                <div id="thread-list" class="space-y-0 pb-24">
+                <div id="thread-list" class="space-y-4 pb-24">
                     <div class="flex flex-col items-center justify-center py-20 text-muted" id="loader">
-                        <div class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin mb-4"></div>
+                        <div class="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
                         <p class="text-[13px] font-medium">Loading issues...</p>
                     </div>
                 </div>
@@ -131,14 +137,14 @@
         </main>
 
         <!-- Right Sidebar (Widgets) -->
-        <aside class="hidden lg:flex flex-col py-8 px-6 overflow-y-auto h-[calc(100vh-56px)] sticky top-14 border-l border-white/[0.08] bg-background">
+        <aside class="hidden lg:flex flex-col py-8 px-6 overflow-y-auto h-[calc(100vh-56px)] sticky top-14 border-l border-border bg-background/50">
             
             <div class="mb-8">
                 <h3 class="text-[12px] font-medium text-white mb-3">About Postra</h3>
                 <p class="text-[13px] text-muted leading-relaxed mb-4">A high-performance community platform designed for speed and efficiency.</p>
                 <div class="space-y-2">
-                    <button class="btn-primary w-full" id="open-create-post">New Issue</button>
-                    <button class="btn-secondary w-full" id="open-create-comm">New Project</button>
+                    <button class="inline-flex w-full items-center justify-center rounded-md text-[13px] font-medium transition-all bg-white text-black hover:bg-gray-200 h-8 px-4" id="open-create-post">New Issue</button>
+                    <button class="inline-flex w-full items-center justify-center rounded-md text-[13px] font-medium transition-all border border-border bg-transparent hover:bg-accent text-foreground h-8 px-4" id="open-create-comm">New Project</button>
                 </div>
             </div>
 
@@ -167,48 +173,6 @@
                 </div>
             </div>
         </aside>
-    </div>
-
-    <!-- AI Voice Assistant Trigger (Minimalist) -->
-    <div class="fixed bottom-8 right-8 z-50 group">
-        <button class="relative flex items-center justify-center w-12 h-12 bg-white rounded-full text-black shadow-[0_4px_14px_rgba(255,255,255,0.2)] transition-all hover:scale-105 active:scale-95 border border-white" id="voice-trigger">
-            <i class="fa-solid fa-sparkles text-lg"></i>
-        </button>
-    </div>
-
-    <!-- AI Assistant Panel (Linear style) -->
-    <div id="voice-panel" class="hidden fixed bottom-24 right-8 w-[380px] bg-surface border border-white/[0.1] rounded-lg shadow-2xl z-[110] flex flex-col overflow-hidden animate-slide-up origin-bottom-right">
-        <!-- Header -->
-        <div class="px-4 py-3 border-b border-white/[0.08] flex justify-between items-center bg-white/[0.02]">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-sparkles text-white text-xs"></i>
-                <h4 class="font-medium text-[13px] text-white">Postra AI</h4>
-            </div>
-            <button id="close-voice" class="text-muted hover:text-white transition-colors text-sm">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        
-        <!-- Output Area -->
-        <div id="voice-output" class="p-4 max-h-[300px] overflow-y-auto text-[13px] space-y-4 bg-background">
-            <div class="flex gap-3">
-                <div class="w-6 h-6 rounded bg-white/[0.05] border border-white/[0.1] flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-robot text-[10px] text-muted"></i></div>
-                <p class="text-muted leading-relaxed">How can I assist you with Postra today?</p>
-            </div>
-        </div>
-
-        <!-- Input Area -->
-        <div class="p-3 border-t border-white/[0.08] bg-surface">
-            <div class="relative flex items-center">
-                <input type="text" id="assistant-input" placeholder="Ask AI..." class="w-full bg-background border border-white/[0.1] rounded-md py-2 pl-3 pr-10 text-[13px] text-white focus:outline-none focus:border-white/[0.3] transition-colors placeholder:text-muted">
-                <button id="send-to-ai" class="absolute right-1 w-7 h-7 rounded text-muted hover:text-white hover:bg-white/[0.1] transition-colors flex items-center justify-center">
-                    <i class="fa-solid fa-arrow-up text-xs"></i>
-                </button>
-            </div>
-            <button id="stop-task" class="mt-2 w-full py-1.5 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.05] rounded-md font-medium text-white text-[11px] transition-colors flex items-center justify-center gap-1.5 hidden">
-                <i class="fa-solid fa-stop text-[9px]"></i> Stop Generation
-            </button>
-        </div>
     </div>
 
     <!-- Modals Container -->
