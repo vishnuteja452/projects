@@ -8,7 +8,7 @@ exports.handleVoiceQuery = async (req, res) => {
         if (!query) return res.status(400).json({ error: "Empty query provided." });
 
         const GEMINI_KEY = process.env.GEMINI_KEY;
-        const model = 'gemini-2.5-flash';
+        const model = 'gemini-1.5-flash';
         
         const q = query.toLowerCase();
         let fallbackUsed = false;
