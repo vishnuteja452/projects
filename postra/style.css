@@ -2,18 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hardcoded Dark Theme directly on :root so it never defaults to white */
+/* Linear.app Aesthetic - Monochromatic True Dark */
 @layer base {
   :root {
-    /* Deep space dark background */
-    --background: 11 14 20;
-    --surface: 19 24 35;
-    --foreground: 248 250 252;
-    --muted: 148 163 184;
-    --border: 30 41 59;
+    /* True black background */
+    --background: 0 0 0;
+    --surface: 10 10 10;
+    --foreground: 242 242 242;
+    --muted: 138 143 152;
+    --border: 38 38 38;
     
-    /* We won't use a single primary color, we'll use Tailwind utilities directly for varied colors */
-    --radius: 0.75rem;
+    /* Monochromatic Accents */
+    --primary: 255 255 255; 
+    --primary-foreground: 0 0 0;
+    --accent: 25 25 25;
+    --accent-foreground: 242 242 242;
+    
+    --radius: 0.5rem; /* Linear uses smaller border radii */
   }
 }
 
@@ -22,8 +27,9 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-fuchsia-500/30;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground antialiased selection:bg-white/20;
+    font-family: 'Inter', sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     background-color: rgb(var(--background));
     color: rgb(var(--foreground));
   }
@@ -39,78 +45,50 @@
 }
 
 @layer components {
-  .premium-card {
-    @apply bg-surface/80 backdrop-blur-xl border border-border rounded-[var(--radius)] shadow-lg transition-all duration-300;
+  .linear-card {
+    @apply bg-surface border border-white/[0.08] rounded-[var(--radius)] shadow-sm transition-all duration-200 hover:border-white/[0.15];
   }
   
   .glass-panel {
-    @apply bg-surface/60 backdrop-blur-xl border-b border-border/50;
+    @apply bg-background/80 backdrop-blur-xl border-b border-white/[0.08];
   }
 
   .input-field {
-    @apply flex h-10 w-full rounded-lg border border-border bg-background/50 px-4 py-2 text-sm shadow-inner transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-9 w-full rounded-md border border-white/[0.1] bg-white/[0.03] px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/[0.2] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white disabled:pointer-events-none disabled:opacity-50 bg-white text-black h-8 px-4 shadow-[0_1px_3px_rgba(255,255,255,0.1)] active:scale-[0.98];
+  }
+  .btn-primary:hover {
+    @apply bg-white/90;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50 border border-white/[0.1] bg-transparent hover:bg-white/[0.05] text-foreground h-8 px-4 active:scale-[0.98];
   }
 }
 
-/* Stunning Mesh Gradient Background Elements - Multi-colored */
-.mesh-bg-1 {
+/* Linear-style subtle top gradient glow */
+.linear-glow {
   position: absolute;
-  top: -10%;
-  left: -10%;
-  width: 50vw;
-  height: 50vw;
-  background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, rgba(11,14,20,0) 70%); /* Cyan */
-  border-radius: 50%;
-  z-index: -1;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 400px;
+  background: radial-gradient(ellipse at top, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 60%);
   pointer-events: none;
-  filter: blur(80px);
-}
-
-.mesh-bg-2 {
-  position: absolute;
-  bottom: -20%;
-  right: -10%;
-  width: 60vw;
-  height: 60vw;
-  background: radial-gradient(circle, rgba(236,72,153,0.12) 0%, rgba(11,14,20,0) 70%); /* Pink */
-  border-radius: 50%;
-  z-index: -1;
-  pointer-events: none;
-  filter: blur(100px);
-}
-
-.mesh-bg-3 {
-  position: absolute;
-  top: 30%;
-  right: -20%;
-  width: 40vw;
-  height: 40vw;
-  background: radial-gradient(circle, rgba(245,158,11,0.08) 0%, rgba(11,14,20,0) 70%); /* Amber */
-  border-radius: 50%;
-  z-index: -1;
-  pointer-events: none;
-  filter: blur(90px);
+  z-index: 0;
 }
 
 /* Custom Animations */
 @keyframes slideUpAndFade {
-  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .animate-slide-up {
-  animation: slideUpAndFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.8; }
-  100% { transform: scale(1.6); opacity: 0; }
-}
-.vapi-pulse-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 2px solid #ec4899; /* Pink */
-  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  animation: slideUpAndFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes wave {
@@ -118,17 +96,17 @@
   100% { transform: scaleY(1.5); opacity: 1; }
 }
 .vapi-orb span {
-  width: 3px;
+  width: 2px;
   background-color: #fff;
-  border-radius: 2px;
+  border-radius: 1px;
   animation: wave 0.8s infinite alternate ease-in-out;
 }
-.vapi-orb span:nth-child(1) { height: 8px; animation-delay: 0.1s; }
-.vapi-orb span:nth-child(2) { height: 16px; animation-delay: 0.2s; }
-.vapi-orb span:nth-child(3) { height: 12px; animation-delay: 0.3s; }
-.vapi-orb span:nth-child(4) { height: 14px; animation-delay: 0.4s; }
+.vapi-orb span:nth-child(1) { height: 6px; animation-delay: 0.1s; }
+.vapi-orb span:nth-child(2) { height: 12px; animation-delay: 0.2s; }
+.vapi-orb span:nth-child(3) { height: 8px; animation-delay: 0.3s; }
+.vapi-orb span:nth-child(4) { height: 10px; animation-delay: 0.4s; }
 
 /* Image constraints */
 .post-image {
-  @apply w-full h-[350px] object-cover rounded-lg bg-surface;
+  @apply w-full h-[350px] object-cover rounded-md bg-surface border border-white/[0.05];
 }

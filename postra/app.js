@@ -49,11 +49,17 @@ const PostraApp = {
                 this.showLoginModal(); 
                 return; 
             }
+            if (!res.ok) {
+                throw new Error(`API returned ${res.status} ${res.statusText}`);
+            }
             const data = await res.json();
             this.state.threads = Array.isArray(data) ? data : [];
+            this.state.lastError = null;
             this.renderThreads();
         } catch (e) {
+            console.error("Fetch threads failed:", e);
             this.state.threads = [];
+            this.state.lastError = e.message || "Connection failed";
             this.renderThreads();
         }
     },
@@ -62,6 +68,11 @@ const PostraApp = {
         const container = document.getElementById('thread-list');
         if (!container) return;
         
+        if (this.state.lastError) {
+            container.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-red-500 font-medium text-[13px] border border-red-500/20 bg-red-500/5 rounded-xl p-6 mx-auto max-w-md text-center mt-10 shadow-lg shadow-red-500/5"><i class="fa-solid fa-triangle-exclamation text-2xl mb-3"></i><p>Database Error: ${this.state.lastError}</p><p class="text-xs text-red-500/70 mt-2">Check if your MongoDB cluster is active.</p></div>`;
+            return;
+        }
+
         let displayThreads = this.state.threads;
         try {
             const hidden = JSON.parse(localStorage.getItem('hiddenThreads') || '[]');
@@ -69,7 +80,7 @@ const PostraApp = {
         } catch(e) {}
         
         if (displayThreads.length === 0) {
-            container.innerHTML = `<div class="text-center py-20 text-muted font-bold tracking-widest text-[13px]">No discourse found.</div>`;
+            container.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-muted font-medium text-[13px] border border-border/50 rounded-xl p-6 mx-auto max-w-md text-center mt-10 bg-surface/30"><div class="w-10 h-10 rounded-full border border-border/50 flex items-center justify-center mb-4 bg-background"><i class="fa-solid fa-inbox"></i></div>No discourse found for this board.</div>`;
             return;
         }
         
