@@ -1,18 +1,17 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Postra | Next-Gen Discourse Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
@@ -26,13 +25,8 @@
                             DEFAULT: "rgba(var(--primary), <alpha-value>)",
                             foreground: "rgba(var(--primary-foreground), <alpha-value>)",
                         },
-                        secondary: {
-                            DEFAULT: "rgba(var(--secondary), <alpha-value>)",
-                            foreground: "rgba(var(--secondary-foreground), <alpha-value>)",
-                        },
                         muted: {
                             DEFAULT: "rgba(var(--muted), <alpha-value>)",
-                            foreground: "rgba(var(--muted-foreground), <alpha-value>)",
                         },
                         accent: {
                             DEFAULT: "rgba(var(--accent), <alpha-value>)",
@@ -45,23 +39,27 @@
         }
     </script>
 </head>
-<body class="font-sans antialiased text-foreground bg-background">
+<body class="font-sans antialiased text-foreground bg-background relative overflow-x-hidden min-h-screen">
     
-    <!-- Top Navigation (Vercel/Linear style) -->
-    <header class="fixed top-0 w-full h-14 glass-panel z-50 px-6 flex items-center justify-between border-b border-border/50">
+    <!-- Mesh Gradients for background glow -->
+    <div class="mesh-bg-1"></div>
+    <div class="mesh-bg-2"></div>
+
+    <!-- Top Navigation -->
+    <header class="fixed top-0 w-full h-16 glass-panel z-50 px-6 flex items-center justify-between">
         <div class="flex items-center gap-3 cursor-pointer group" id="logo-home">
-            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-sm transition-transform group-hover:scale-105">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all group-hover:scale-105">
                 <i class="fa-solid fa-bolt"></i>
             </div>
-            <span class="font-semibold text-lg tracking-tight text-foreground">Postra</span>
+            <span class="font-bold text-xl tracking-tight text-white">Postra</span>
         </div>
         
         <div class="flex-1 max-w-lg mx-8 hidden md:block">
-            <div class="relative bg-surface/50 h-9 rounded-md px-3 flex items-center gap-2 border border-border/50 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all shadow-sm">
-                <i class="fa-solid fa-magnifying-glass text-muted text-sm"></i>
-                <input type="text" id="global-search" placeholder="Search across Postra..." class="bg-transparent border-none outline-none text-foreground text-sm w-full placeholder:text-muted/70">
+            <div class="relative bg-black/20 h-10 rounded-xl px-4 flex items-center gap-2 border border-white/5 focus-within:border-indigo-500/50 focus-within:bg-black/40 transition-all shadow-inner group">
+                <i class="fa-solid fa-magnifying-glass text-muted group-focus-within:text-indigo-400 transition-colors"></i>
+                <input type="text" id="global-search" placeholder="Search across Postra..." class="bg-transparent border-none outline-none text-white text-sm w-full placeholder:text-muted/50 focus:ring-0">
                 <div class="hidden lg:flex items-center gap-1">
-                    <kbd class="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted/10 px-1.5 font-mono text-[10px] font-medium text-muted opacity-100"><span class="text-xs">⌘</span>K</kbd>
+                    <kbd class="pointer-events-none inline-flex h-6 select-none items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 font-mono text-[10px] font-medium text-muted"><span>⌘</span>K</kbd>
                 </div>
             </div>
         </div>
@@ -73,111 +71,112 @@
     </header>
 
     <!-- Main Layout -->
-    <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[240px_1fr_320px] max-w-[1400px] mx-auto mt-14 h-[calc(100vh-56px)]">
+    <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[250px_1fr_320px] max-w-[1440px] mx-auto mt-16 h-[calc(100vh-64px)] relative z-10">
         
         <!-- Sidebar Navigation -->
-        <aside class="hidden md:flex flex-col sticky top-14 h-[calc(100vh-56px)] border-r border-border/40 px-4 py-6 overflow-y-auto bg-background/50">
-            <div class="mb-8">
-                <h4 class="px-2 text-xs font-semibold text-muted uppercase tracking-wider mb-3">Discover</h4>
-                <ul class="space-y-1">
-                    <li class="nav-item bg-accent text-accent-foreground rounded-md transition-colors" id="feed-home">
-                        <a href="#" class="flex items-center gap-3 px-2 py-1.5 text-sm font-medium"><i class="fa-solid fa-house w-4 text-center"></i> Home</a>
+        <aside class="hidden md:flex flex-col sticky top-16 h-[calc(100vh-64px)] border-r border-border/30 px-5 py-8 overflow-y-auto bg-background/20 backdrop-blur-sm">
+            <div class="mb-10">
+                <h4 class="px-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4 opacity-80">Discover</h4>
+                <ul class="space-y-1.5">
+                    <li class="nav-item bg-indigo-500/10 text-indigo-300 rounded-lg border border-indigo-500/20 transition-colors" id="feed-home">
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm font-semibold"><i class="fa-solid fa-house w-4 text-center"></i> Home</a>
                     </li>
-                    <li class="nav-item hover:bg-accent/50 text-foreground/80 hover:text-foreground rounded-md transition-colors" id="feed-popular">
-                        <a href="#" class="flex items-center gap-3 px-2 py-1.5 text-sm font-medium"><i class="fa-solid fa-fire w-4 text-center"></i> Popular</a>
+                    <li class="nav-item hover:bg-white/5 text-muted hover:text-foreground rounded-lg transition-colors" id="feed-popular">
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm font-medium"><i class="fa-solid fa-fire w-4 text-center"></i> Popular</a>
                     </li>
-                    <li class="nav-item hover:bg-accent/50 text-foreground/80 hover:text-foreground rounded-md transition-colors" id="feed-all">
-                        <a href="#" class="flex items-center gap-3 px-2 py-1.5 text-sm font-medium"><i class="fa-solid fa-layer-group w-4 text-center"></i> All Activity</a>
+                    <li class="nav-item hover:bg-white/5 text-muted hover:text-foreground rounded-lg transition-colors" id="feed-all">
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm font-medium"><i class="fa-solid fa-layer-group w-4 text-center"></i> All Activity</a>
                     </li>
-                    <li class="nav-item hover:bg-accent/50 text-foreground/80 hover:text-foreground rounded-md transition-colors" id="feed-my-posts">
-                        <a href="#" class="flex items-center gap-3 px-2 py-1.5 text-sm font-medium"><i class="fa-solid fa-user w-4 text-center"></i> My Profile</a>
+                    <li class="nav-item hover:bg-white/5 text-muted hover:text-foreground rounded-lg transition-colors" id="feed-my-posts">
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm font-medium"><i class="fa-solid fa-user w-4 text-center"></i> My Profile</a>
                     </li>
                 </ul>
             </div>
             
-            <div id="joined-boards-section" class="mb-8 hidden">
-                <h4 class="px-2 text-xs font-semibold text-muted uppercase tracking-wider mb-3">Your Communities</h4>
-                <ul class="space-y-1" id="sidebar-joined-boards">
+            <div id="joined-boards-section" class="mb-10 hidden">
+                <h4 class="px-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4 opacity-80">Your Communities</h4>
+                <ul class="space-y-1.5" id="sidebar-joined-boards">
                     <!-- Dynamic rendering -->
                 </ul>
             </div>
 
             <div>
-                <h4 class="px-2 text-xs font-semibold text-muted uppercase tracking-wider mb-3">Explore Boards</h4>
-                <ul class="space-y-1" id="sidebar-boards">
+                <h4 class="px-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4 opacity-80">Explore Boards</h4>
+                <ul class="space-y-1.5" id="sidebar-boards">
                     <!-- Dynamic rendering -->
                 </ul>
             </div>
         </aside>
 
         <!-- Main Feed -->
-        <main class="py-8 px-4 sm:px-8 overflow-y-auto" id="main-content">
-            <div id="feed-container" class="max-w-2xl mx-auto">
+        <main class="py-10 px-4 sm:px-8 lg:px-12 overflow-y-auto" id="main-content">
+            <div id="feed-container" class="max-w-2xl mx-auto relative">
+                
                 <!-- Create Post Input (Premium Card) -->
-                <div class="premium-card p-3 mb-8 flex items-center gap-3 cursor-pointer group" onclick="PostraApp.showCreatePostModal()">
-                    <div class="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-muted group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <div class="premium-card p-4 mb-10 flex items-center gap-3 cursor-pointer group" onclick="PostraApp.showCreatePostModal()">
+                    <div class="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-muted group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors border border-transparent group-hover:border-indigo-500/30">
                         <i class="fa-solid fa-plus text-sm"></i>
                     </div>
-                    <div class="flex-1 px-2 text-sm text-muted/70 font-medium">
+                    <div class="flex-1 px-3 text-sm text-muted/60 font-medium group-hover:text-white/80 transition-colors">
                         Share something with the community...
                     </div>
-                    <div class="flex gap-1">
-                        <button class="w-9 h-9 flex items-center justify-center text-muted hover:bg-accent rounded-md transition-colors">
+                    <div class="flex gap-2">
+                        <button class="w-10 h-10 flex items-center justify-center text-muted hover:bg-accent rounded-lg transition-colors">
                             <i class="fa-solid fa-image"></i>
                         </button>
-                        <button class="w-9 h-9 flex items-center justify-center text-muted hover:bg-accent rounded-md transition-colors">
+                        <button class="w-10 h-10 flex items-center justify-center text-muted hover:bg-accent rounded-lg transition-colors">
                             <i class="fa-solid fa-link"></i>
                         </button>
                     </div>
                 </div>
 
-                <div id="thread-list" class="space-y-5 pb-20">
-                    <div class="flex flex-col items-center justify-center py-20 text-muted" id="loader">
-                        <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p class="text-sm font-medium">Syncing feed...</p>
+                <div id="thread-list" class="space-y-6 pb-24">
+                    <div class="flex flex-col items-center justify-center py-32 text-muted" id="loader">
+                        <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                        <p class="text-sm font-medium tracking-widest uppercase text-indigo-400/80">Syncing Feed...</p>
                     </div>
                 </div>
             </div>
         </main>
 
         <!-- Right Sidebar (Widgets) -->
-        <aside class="hidden lg:flex flex-col py-8 px-6 overflow-y-auto h-[calc(100vh-56px)] sticky top-14 border-l border-border/40">
+        <aside class="hidden lg:flex flex-col py-10 px-6 overflow-y-auto h-[calc(100vh-64px)] sticky top-16 border-l border-border/30 bg-background/20 backdrop-blur-sm">
             
-            <div class="premium-card p-5 mb-6 relative overflow-hidden group">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
-                <h3 class="text-sm font-semibold mb-2 flex items-center gap-2"><i class="fa-solid fa-rocket text-blue-500"></i> Welcome to Postra</h3>
-                <p class="text-xs text-muted/90 mb-4 leading-relaxed">A high-performance community platform. Share knowledge, discuss architecture, and build products.</p>
-                <div class="space-y-2">
-                    <button class="btn-primary w-full text-xs shadow-md" id="open-create-post">Create New Post</button>
+            <div class="premium-card p-6 mb-8 relative overflow-hidden group border-indigo-500/20 bg-gradient-to-b from-indigo-500/5 to-transparent">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                <h3 class="text-sm font-bold mb-3 flex items-center gap-2 text-white"><i class="fa-solid fa-rocket text-indigo-400"></i> Welcome to Postra</h3>
+                <p class="text-xs text-muted mb-5 leading-relaxed">A high-performance community platform. Share knowledge, discuss architecture, and build products.</p>
+                <div class="space-y-3">
+                    <button class="btn-primary w-full text-xs" id="open-create-post">Create New Post</button>
                     <button class="btn-secondary w-full text-xs" id="open-create-comm">Create Community</button>
                 </div>
             </div>
 
-            <div class="premium-card p-5 mb-6">
-                <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-4 flex items-center gap-2">
+            <div class="premium-card p-6 mb-8">
+                <h3 class="text-[11px] font-bold text-indigo-400 uppercase tracking-widest mb-5 flex items-center gap-2">
                     <i class="fa-solid fa-chart-line"></i> Trending Now
                 </h3>
-                <div id="trending-widget-list" class="space-y-4">
+                <div id="trending-widget-list" class="space-y-5">
                     <!-- Top trending -->
                 </div>
             </div>
 
-            <div class="premium-card p-5">
-                <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-4">Network Status</h3>
+            <div class="premium-card p-6">
+                <h3 class="text-[11px] font-bold text-indigo-400 uppercase tracking-widest mb-5">Network Status</h3>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-accent/50 p-3 rounded-lg border border-border/30">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="relative flex h-2 w-2">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    <div class="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="relative flex h-2.5 w-2.5">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
                             </span>
-                            <p class="text-lg font-bold" id="status-users">61.2k</p>
+                            <p class="text-xl font-bold text-white" id="status-users">61.2k</p>
                         </div>
-                        <p class="text-[10px] text-muted font-semibold uppercase">Online Users</p>
+                        <p class="text-[9px] text-muted font-bold uppercase tracking-wider">Online Users</p>
                     </div>
-                    <div class="bg-accent/50 p-3 rounded-lg border border-border/30">
-                        <p class="text-lg font-bold mb-1" id="status-threads">456</p>
-                        <p class="text-[10px] text-muted font-semibold uppercase">Active Threads</p>
+                    <div class="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner">
+                        <p class="text-xl font-bold text-white mb-2" id="status-threads">456</p>
+                        <p class="text-[9px] text-muted font-bold uppercase tracking-wider">Active Threads</p>
                     </div>
                 </div>
             </div>
@@ -185,61 +184,60 @@
     </div>
 
     <!-- AI Voice Assistant Trigger (Vapi) -->
-    <div class="fixed bottom-8 right-8 z-50 group">
+    <div class="fixed bottom-10 right-10 z-50 group">
         <div class="relative">
             <!-- Pulsing background rings -->
-            <div class="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" style="animation-duration: 3s;"></div>
-            <div class="absolute -inset-2 rounded-full border border-blue-500/30 animate-pulse"></div>
+            <div class="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" style="animation-duration: 3s;"></div>
+            <div class="absolute -inset-2 rounded-full border border-purple-500/30 animate-pulse"></div>
             
-            <button class="relative flex items-center justify-center w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-full text-white shadow-xl hover:shadow-blue-500/25 transition-all hover:scale-105 active:scale-95" id="voice-trigger">
-                <i class="fa-solid fa-sparkles text-lg"></i>
+            <button class="relative flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full text-white shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all hover:scale-110 active:scale-95 border border-white/10" id="voice-trigger">
+                <i class="fa-solid fa-sparkles text-2xl drop-shadow-md"></i>
             </button>
         </div>
         
         <!-- Tooltip -->
-        <div class="absolute right-[120%] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-surface border border-border shadow-lg rounded-md text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Ask AI Assistant
+        <div class="absolute right-[120%] top-1/2 -translate-y-1/2 px-4 py-2 bg-surface/90 backdrop-blur-md border border-white/10 shadow-xl rounded-lg text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Postra Intelligence
             <!-- Arrow -->
-            <div class="absolute top-1/2 -right-1 -translate-y-1/2 border-y-4 border-y-transparent border-l-4 border-l-border"></div>
-            <div class="absolute top-1/2 -right-[3px] -translate-y-1/2 border-y-[3px] border-y-transparent border-l-[3px] border-l-surface"></div>
+            <div class="absolute top-1/2 -right-1.5 -translate-y-1/2 border-y-[6px] border-y-transparent border-l-[6px] border-l-white/10"></div>
         </div>
     </div>
 
     <!-- AI Assistant Panel -->
-    <div id="voice-panel" class="hidden fixed bottom-28 right-8 w-[380px] bg-surface/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-[110] flex flex-col overflow-hidden animate-slide-up origin-bottom-right">
+    <div id="voice-panel" class="hidden fixed bottom-32 right-10 w-[400px] bg-surface/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] z-[110] flex flex-col overflow-hidden animate-slide-up origin-bottom-right">
         <!-- Header -->
-        <div class="px-5 py-4 border-b border-border/50 flex justify-between items-center bg-accent/30">
+        <div class="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-black/20">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-sm">
-                    <i class="fa-solid fa-robot text-white text-xs"></i>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg border border-white/10">
+                    <i class="fa-solid fa-robot text-white text-sm"></i>
                 </div>
                 <div>
-                    <h4 class="font-semibold text-sm">Postra Intelligence</h4>
-                    <p class="text-[10px] text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Online</p>
+                    <h4 class="font-bold text-sm text-white">Postra Intelligence</h4>
+                    <p class="text-[11px] text-emerald-400 flex items-center gap-1.5 font-medium mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-[0_0_5px_#10b981]"></span> System Online</p>
                 </div>
             </div>
-            <button id="close-voice" class="text-muted hover:text-foreground transition-colors w-8 h-8 flex items-center justify-center rounded-md hover:bg-accent">
-                <i class="fa-solid fa-xmark"></i>
+            <button id="close-voice" class="text-muted hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10">
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
         </div>
         
         <!-- Output Area -->
-        <div id="voice-output" class="p-5 max-h-[300px] overflow-y-auto text-sm space-y-4">
-            <div class="flex gap-3">
-                <div class="w-6 h-6 rounded-full bg-accent flex-shrink-0 flex items-center justify-center mt-0.5"><i class="fa-solid fa-robot text-[10px] text-muted"></i></div>
-                <p class="bg-accent/50 p-3 rounded-2xl rounded-tl-sm text-foreground/90 border border-border/50">Hello! I am your Postra Assistant. How can I help you today?</p>
+        <div id="voice-output" class="p-6 max-h-[350px] overflow-y-auto text-sm space-y-5">
+            <div class="flex gap-4">
+                <div class="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex-shrink-0 flex items-center justify-center mt-1"><i class="fa-solid fa-robot text-xs text-indigo-400"></i></div>
+                <p class="bg-black/30 p-4 rounded-2xl rounded-tl-sm text-white/90 border border-white/5 leading-relaxed shadow-inner">Hello! I am your Postra Assistant. How can I help you navigate the platform today?</p>
             </div>
         </div>
 
         <!-- Input Area -->
-        <div class="p-4 border-t border-border/50 bg-background/50">
+        <div class="p-5 border-t border-white/5 bg-black/40">
             <div class="relative flex items-center">
-                <input type="text" id="assistant-input" placeholder="Message assistant..." class="w-full bg-surface border border-border rounded-full py-2.5 pl-4 pr-12 text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 shadow-sm transition-all placeholder:text-muted/70">
-                <button id="send-to-ai" class="absolute right-1.5 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
-                    <i class="fa-solid fa-arrow-up text-xs"></i>
+                <input type="text" id="assistant-input" placeholder="Ask Postra..." class="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-5 pr-14 text-sm text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 shadow-inner transition-all placeholder:text-muted/50">
+                <button id="send-to-ai" class="absolute right-2 w-10 h-10 rounded-lg bg-indigo-500 text-white flex items-center justify-center hover:bg-indigo-400 transition-colors shadow-lg disabled:opacity-50 border border-white/10">
+                    <i class="fa-solid fa-arrow-up text-sm"></i>
                 </button>
             </div>
-            <button id="stop-task" class="mt-3 w-full py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-md font-medium text-xs transition-colors hover:bg-red-500/20 flex items-center justify-center gap-2 hidden">
+            <button id="stop-task" class="mt-4 w-full py-2.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-bold text-xs transition-colors hover:bg-red-500/20 flex items-center justify-center gap-2 hidden uppercase tracking-wider">
                 <i class="fa-solid fa-circle-stop"></i> Stop Generation
             </button>
         </div>

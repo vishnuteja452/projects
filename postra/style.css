@@ -4,30 +4,20 @@
 
 @layer base {
   :root {
-    --background: 250 250 250;
-    --surface: 255 255 255;
-    --foreground: 9 9 11;
-    --muted: 113 113 122;
-    --border: 228 228 231;
-    --primary: 24 24 27;
-    --primary-foreground: 250 250 250;
-    --accent: 244 244 245;
-    --accent-foreground: 24 24 27;
-    --ring: 24 24 27;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 9 9 11;
-    --surface: 24 24 27;
-    --foreground: 250 250 250;
-    --muted: 161 161 170;
-    --border: 39 39 42;
-    --primary: 250 250 250;
-    --primary-foreground: 24 24 27;
-    --accent: 39 39 42;
-    --accent-foreground: 250 250 250;
-    --ring: 212 212 216;
+    /* Deep space dark background */
+    --background: 11 14 20;
+    --surface: 19 24 35;
+    --foreground: 248 250 252;
+    --muted: 148 163 184;
+    --border: 30 41 59;
+    
+    /* Vibrant Electric Accents */
+    --primary: 99 102 241; /* Indigo */
+    --primary-foreground: 255 255 255;
+    --accent: 30 41 59;
+    --accent-foreground: 248 250 252;
+    --ring: 99 102 241;
+    --radius: 0.75rem;
   }
 }
 
@@ -36,8 +26,11 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/20;
+    @apply bg-background text-foreground antialiased selection:bg-indigo-500/30;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Dark mode force */
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
   }
   
   /* Hide Scrollbars */
@@ -52,45 +45,77 @@
 
 @layer components {
   .premium-card {
-    @apply bg-surface border border-border rounded-[var(--radius)] shadow-sm transition-all duration-200 hover:shadow-md hover:border-muted/30;
+    @apply bg-surface/80 backdrop-blur-xl border border-border rounded-[var(--radius)] shadow-lg transition-all duration-300 hover:shadow-indigo-500/10 hover:border-indigo-500/30;
   }
   
   .glass-panel {
-    @apply bg-surface/70 backdrop-blur-md border border-border/50;
+    @apply bg-surface/60 backdrop-blur-xl border-b border-border/50;
   }
   
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 shadow-sm active:scale-[0.98];
+    @apply inline-flex items-center justify-center rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:pointer-events-none disabled:opacity-50 text-white h-10 px-5 py-2 shadow-lg shadow-indigo-500/25 active:scale-95;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
   }
   
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-border bg-transparent hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 active:scale-[0.98];
+    @apply inline-flex items-center justify-center rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:pointer-events-none disabled:opacity-50 border border-border/80 bg-surface/50 hover:bg-surface hover:text-white hover:border-indigo-500/50 h-10 px-5 py-2 active:scale-95;
   }
 
   .input-field {
-    @apply flex h-9 w-full rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-10 w-full rounded-lg border border-border bg-background/50 px-4 py-2 text-sm shadow-inner transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted focus-visible:outline-none focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50;
   }
+}
+
+/* Stunning Mesh Gradient Background Elements */
+.mesh-bg-1 {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(11,14,20,0) 70%);
+  border-radius: 50%;
+  z-index: -1;
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+.mesh-bg-2 {
+  position: absolute;
+  bottom: -20%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(11,14,20,0) 70%);
+  border-radius: 50%;
+  z-index: -1;
+  pointer-events: none;
+  filter: blur(100px);
 }
 
 /* Custom Animations */
 @keyframes slideUpAndFade {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .animate-slide-up {
-  animation: slideUpAndFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUpAndFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.5; }
-  100% { transform: scale(1.5); opacity: 0; }
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
 .vapi-pulse-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid theme('colors.blue.500');
-  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  border: 2px solid #a855f7;
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
 @keyframes wave {
@@ -99,7 +124,7 @@
 }
 .vapi-orb span {
   width: 3px;
-  background-color: theme('colors.blue.500');
+  background-color: #fff;
   border-radius: 2px;
   animation: wave 0.8s infinite alternate ease-in-out;
 }
@@ -110,5 +135,5 @@
 
 /* Image constraints */
 .post-image {
-  @apply w-full h-[350px] object-cover rounded-md bg-accent;
+  @apply w-full h-[350px] object-cover rounded-lg bg-surface;
 }
