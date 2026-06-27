@@ -5,20 +5,18 @@
 /* Linear.app Aesthetic - Monochromatic True Dark */
 @layer base {
   :root {
-    /* True black background */
     --background: 0 0 0;
     --surface: 10 10 10;
     --foreground: 242 242 242;
     --muted: 138 143 152;
     --border: 38 38 38;
     
-    /* Monochromatic Accents */
     --primary: 255 255 255; 
     --primary-foreground: 0 0 0;
     --accent: 25 25 25;
     --accent-foreground: 242 242 242;
     
-    --radius: 0.5rem; /* Linear uses smaller border radii */
+    --radius: 0.5rem;
   }
 }
 
@@ -46,7 +44,7 @@
 
 @layer components {
   .linear-card {
-    @apply bg-surface border border-white/[0.08] rounded-[var(--radius)] shadow-sm transition-all duration-200 hover:border-white/[0.15];
+    @apply bg-surface border border-white/[0.08] rounded-[var(--radius)] shadow-sm transition-all duration-500 hover:border-white/[0.2] hover:shadow-[0_0_30px_rgba(255,255,255,0.05)];
   }
   
   .glass-panel {
@@ -58,14 +56,14 @@
   }
   
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white disabled:pointer-events-none disabled:opacity-50 bg-white text-black h-8 px-4 shadow-[0_1px_3px_rgba(255,255,255,0.1)] active:scale-[0.98];
+    @apply inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white disabled:pointer-events-none disabled:opacity-50 bg-white text-black h-8 px-4 shadow-[0_1px_3px_rgba(255,255,255,0.1)] active:scale-[0.98];
   }
   .btn-primary:hover {
-    @apply bg-white/90;
+    @apply bg-white/90 shadow-[0_0_15px_rgba(255,255,255,0.4)];
   }
   
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50 border border-white/[0.1] bg-transparent hover:bg-white/[0.05] text-foreground h-8 px-4 active:scale-[0.98];
+    @apply inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50 border border-white/[0.1] bg-transparent hover:bg-white/[0.1] text-foreground h-8 px-4 active:scale-[0.98];
   }
 }
 
@@ -76,19 +74,38 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100vw;
-  height: 400px;
-  background: radial-gradient(ellipse at top, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 60%);
+  height: 500px;
+  background: radial-gradient(ellipse at top, rgba(94,106,210,0.15) 0%, rgba(0,0,0,0) 60%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Custom Animations */
+/* --- Eye-Catching Smooth Animations --- */
+
 @keyframes slideUpAndFade {
-  from { opacity: 0; transform: translateY(8px) scale(0.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  0% { opacity: 0; transform: translateY(15px) scale(0.97); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 .animate-slide-up {
-  animation: slideUpAndFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUpAndFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(94, 106, 210, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(94, 106, 210, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(94, 106, 210, 0); }
+}
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s infinite;
 }
 
 @keyframes wave {
@@ -106,7 +123,11 @@
 .vapi-orb span:nth-child(3) { height: 8px; animation-delay: 0.3s; }
 .vapi-orb span:nth-child(4) { height: 10px; animation-delay: 0.4s; }
 
-/* Image constraints */
+/* Smooth hover transitions for everything */
+a, button, .linear-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
 .post-image {
   @apply w-full h-[350px] object-cover rounded-md bg-surface border border-white/[0.05];
 }
